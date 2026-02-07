@@ -27,79 +27,79 @@ extension EmployeeFilterX on EmployeeFilter {
 }
 
 List<EmployeeItem> get kDemoEmployees => [
-      EmployeeItem(
-        id: 'EMP001',
-        name: 'Aisha Patel',
-        initials: 'AP',
-        code: 'EC-1001',
-        department: 'Engineering',
-        status: 'Active',
-        joiningDate: '2022-03-15',
-        resignationDate: null,
-        assignedAssets: [
-          AssignedAsset(
-            name: 'MacBook Pro 16"',
-            assetId: 'LP-2024-001',
-            status: 'In Use',
-          ),
-          AssignedAsset(
-            name: 'Logitech MX Master',
-            assetId: 'MS-2024-001',
-            status: 'In Use',
-          ),
-          AssignedAsset(
-            name: 'Apple Magic Keyboard',
-            assetId: 'KB-2024-001',
-            status: 'In Use',
-          ),
-        ],
+  EmployeeItem(
+    id: 'EMP001',
+    name: 'Aisha Patel',
+    initials: 'AP',
+    code: 'EC-1001',
+    department: 'Engineering',
+    status: 'Active',
+    joiningDate: '2022-03-15',
+    resignationDate: null,
+    assignedAssets: [
+      AssignedAsset(
+        name: 'MacBook Pro 16"',
+        assetId: 'LP-2024-001',
+        status: 'In Use',
       ),
-      EmployeeItem(
-        id: 'EMP002',
-        name: 'Sofia Rodriguez',
-        initials: 'SR',
-        code: 'EC-1003',
-        department: 'HR',
-        status: 'Active',
-        joiningDate: '2021-08-20',
-        resignationDate: null,
-        assignedAssets: [
-          AssignedAsset(
-            name: 'Dell Monitor 24"',
-            assetId: 'MN-2024-002',
-            status: 'In Use',
-          ),
-        ],
+      AssignedAsset(
+        name: 'Logitech MX Master',
+        assetId: 'MS-2024-001',
+        status: 'In Use',
       ),
-      EmployeeItem(
-        id: 'EMP003',
-        name: 'James Okafor',
-        initials: 'JO',
-        code: 'EC-1004',
-        department: 'Marketing',
-        status: 'Resigned',
-        joiningDate: '2020-11-10',
-        resignationDate: '2024-01-15',
-        assignedAssets: [],
+      AssignedAsset(
+        name: 'Apple Magic Keyboard',
+        assetId: 'KB-2024-001',
+        status: 'In Use',
       ),
-      EmployeeItem(
-        id: 'EMP004',
-        name: 'James Okafor',
-        initials: 'JO',
-        code: 'EC-1004',
-        department: 'Marketing',
-        status: 'On Hold',
-        joiningDate: '2020-11-10',
-        resignationDate: null,
-        assignedAssets: [
-          AssignedAsset(
-            name: 'HP Laptop',
-            assetId: 'LP-2023-005',
-            status: 'In Use',
-          ),
-        ],
+    ],
+  ),
+  EmployeeItem(
+    id: 'EMP002',
+    name: 'Sofia Rodriguez',
+    initials: 'SR',
+    code: 'EC-1003',
+    department: 'HR',
+    status: 'Active',
+    joiningDate: '2021-08-20',
+    resignationDate: null,
+    assignedAssets: [
+      AssignedAsset(
+        name: 'Dell Monitor 24"',
+        assetId: 'MN-2024-002',
+        status: 'In Use',
       ),
-    ];
+    ],
+  ),
+  EmployeeItem(
+    id: 'EMP003',
+    name: 'James Okafor',
+    initials: 'JO',
+    code: 'EC-1004',
+    department: 'Marketing',
+    status: 'Resigned',
+    joiningDate: '2020-11-10',
+    resignationDate: '2024-01-15',
+    assignedAssets: [],
+  ),
+  EmployeeItem(
+    id: 'EMP004',
+    name: 'James Okafor',
+    initials: 'JO',
+    code: 'EC-1004',
+    department: 'Marketing',
+    status: 'On Hold',
+    joiningDate: '2020-11-10',
+    resignationDate: null,
+    assignedAssets: [
+      AssignedAsset(
+        name: 'HP Laptop',
+        assetId: 'LP-2023-005',
+        status: 'In Use',
+      ),
+    ],
+  ),
+];
 
 class EmployeeScreenContent extends StatefulWidget {
   const EmployeeScreenContent({super.key});
@@ -123,11 +123,13 @@ class _EmployeeScreenContentState extends State<EmployeeScreenContent> {
   List<EmployeeItem> get _filteredEmployees {
     final query = _searchController.text.trim().toLowerCase();
     return _allEmployees.where((e) {
-      final matchFilter = _filter == EmployeeFilter.all ||
+      final matchFilter =
+          _filter == EmployeeFilter.all ||
           (_filter == EmployeeFilter.active && e.status == 'Active') ||
           (_filter == EmployeeFilter.resigned && e.status == 'Resigned') ||
           (_filter == EmployeeFilter.onHold && e.status == 'On Hold');
-      final matchSearch = query.isEmpty ||
+      final matchSearch =
+          query.isEmpty ||
           e.name.toLowerCase().contains(query) ||
           e.code.toLowerCase().contains(query) ||
           e.department.toLowerCase().contains(query);
@@ -145,10 +147,47 @@ class _EmployeeScreenContentState extends State<EmployeeScreenContent> {
     });
   }
 
+  Future<void> _onEditEmployee(EmployeeItem employee) async {
+    final result = await showEditEmployeeDialog(context, employee);
+    if (result == null || !mounted) return;
+    setState(() {
+      _allEmployees = _allEmployees.map((e) {
+        if (e.id != employee.id) return e;
+        final joinStr = result.joiningDate != null
+            ? '${result.joiningDate!.year}-${result.joiningDate!.month.toString().padLeft(2, '0')}-${result.joiningDate!.day.toString().padLeft(2, '0')}'
+            : '';
+        final resignStr = result.resignationDate != null
+            ? '${result.resignationDate!.year}-${result.resignationDate!.month.toString().padLeft(2, '0')}-${result.resignationDate!.day.toString().padLeft(2, '0')}'
+            : null;
+        return EmployeeItem(
+          id: result.employeeId,
+          name: result.fullName,
+          initials: _initialsFromName(result.fullName),
+          code: result.employeeCode,
+          department: result.department,
+          status: result.status,
+          joiningDate: joinStr,
+          resignationDate: resignStr,
+          assignedAssets: e.assignedAssets,
+        );
+      }).toList();
+    });
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Employee updated'),
+          backgroundColor: AppColors.repairMarkFixedBg,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  }
+
   static String _initialsFromName(String name) {
     final parts = name.trim().split(RegExp(r'\s+'));
     if (parts.isEmpty) return '?';
-    if (parts.length == 1) return parts[0].isNotEmpty ? parts[0][0].toUpperCase() : '?';
+    if (parts.length == 1)
+      return parts[0].isNotEmpty ? parts[0][0].toUpperCase() : '?';
     return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
   }
 
@@ -238,12 +277,23 @@ class _EmployeeScreenContentState extends State<EmployeeScreenContent> {
           SizedBox(height: context.h(24)),
           SectionTitle(title: 'Employees'),
           SizedBox(height: context.h(12)),
-          ..._filteredEmployees.map(
-            (e) => EmployeeExpandableCard(
-              employee: e,
-              isExpanded: _expandedIds.contains(e.id),
-              onToggle: () => _toggleExpanded(e.id),
-            ),
+          ListView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: _filteredEmployees.length,
+            itemBuilder: (context, index) {
+              final e = _filteredEmployees[index];
+              return Padding(
+                key: ValueKey(e.id),
+                padding: EdgeInsets.only(bottom: context.h(12)),
+                child: EmployeeExpandableCard(
+                  employee: e,
+                  isExpanded: _expandedIds.contains(e.id),
+                  onToggle: () => _toggleExpanded(e.id),
+                  onEdit: () => _onEditEmployee(e),
+                ),
+              );
+            },
           ),
         ],
       ),
@@ -255,12 +305,14 @@ class EmployeeExpandableCard extends StatelessWidget {
   final EmployeeItem employee;
   final bool isExpanded;
   final VoidCallback onToggle;
+  final VoidCallback? onEdit;
 
   const EmployeeExpandableCard({
     super.key,
     required this.employee,
     required this.isExpanded,
     required this.onToggle,
+    this.onEdit,
   });
 
   static Color _statusColor(String status) {
@@ -294,66 +346,105 @@ class EmployeeExpandableCard extends StatelessWidget {
                 padding: context.padAll(16),
                 child: Row(
                   children: [
-                    CircleAvatar(
-                      radius: 24,
-                      backgroundColor: AppColors.listAvatarBg,
-                      child: Text(
-                        employee.initials,
-                        style: TextStyle(
-                          color: AppColors.headingColor,
-                          fontSize: context.text(14),
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                    SizedBox(width: context.w(14)),
                     Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                      child: Row(
                         children: [
-                          Text(
-                            employee.name,
-                            style: TextStyle(
-                              color: AppColors.headingColor,
-                              fontSize: context.text(16),
-                              fontWeight: FontWeight.w600,
+                          CircleAvatar(
+                            radius: 24,
+                            backgroundColor: AppColors.listAvatarBg,
+                            child: Text(
+                              employee.initials,
+                              style: TextStyle(
+                                color: AppColors.headingColor,
+                                fontSize: context.text(14),
+                                fontWeight: FontWeight.w600,
+                              ),
                             ),
                           ),
-                          SizedBox(height: context.h(4)),
-                          Text(
-                            '${employee.code} · ${employee.department}',
-                            style: TextStyle(
-                              color: AppColors.subHeadingColor,
-                              fontSize: context.text(13),
-                              fontWeight: FontWeight.w400,
+                          SizedBox(width: context.w(14)),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  employee.name,
+                                  style: TextStyle(
+                                    color: AppColors.headingColor,
+                                    fontSize: context.text(16),
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                  maxLines: 1,
+                                ),
+                                SizedBox(height: context.h(4)),
+                                Text(
+                                  '${employee.code} · ${employee.department}',
+                                  style: TextStyle(
+                                    color: AppColors.subHeadingColor,
+                                    fontSize: context.text(13),
+                                    fontWeight: FontWeight.w400,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                  maxLines: 1,
+                                ),
+                              ],
                             ),
                           ),
                         ],
                       ),
                     ),
-                    Container(
-                      padding: context.padSym(h: 10, v: 6),
-                      decoration: BoxDecoration(
-                        color: _statusColor(employee.status),
-                        borderRadius:
-                            BorderRadius.circular(context.radius(20)),
+                    Expanded(
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Container(
+                            padding: context.padSym(h: 10, v: 6),
+                            decoration: BoxDecoration(
+                              color: _statusColor(employee.status),
+                              borderRadius: BorderRadius.circular(
+                                context.radius(20),
+                              ),
+                            ),
+                            child: Text(
+                              '${employee.status} · ${employee.assignedAssets.length} assets',
+                              style: TextStyle(
+                                color: AppColors.headingColor,
+                                fontSize: context.text(12),
+                                fontWeight: FontWeight.w500,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                              maxLines: 1,
+                            ),
+                          ),
+                          if (onEdit != null) ...[
+                            SizedBox(width: context.w(8)),
+                            IconButton(
+                              onPressed: onEdit,
+                              icon: Icon(
+                                Icons.edit_outlined,
+                                color: AppColors.headingColor,
+                                size: 22,
+                              ),
+                              padding: EdgeInsets.zero,
+                              constraints: const BoxConstraints(
+                                minWidth: 40,
+                                minHeight: 40,
+                              ),
+                              tooltip: 'Edit employee',
+                            ),
+                          ],
+                          SizedBox(width: context.w(4)),
+                          Icon(
+                            isExpanded
+                                ? Icons.keyboard_arrow_up
+                                : Icons.keyboard_arrow_down,
+                            color: AppColors.headingColor,
+                            size: 24,
+                          ),
+                        ],
                       ),
-                      child: Text(
-                        '${employee.status} · ${employee.assignedAssets.length} assets',
-                        style: TextStyle(
-                          color: AppColors.headingColor,
-                          fontSize: context.text(12),
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ),
-                    SizedBox(width: context.w(8)),
-                    Icon(
-                      isExpanded
-                          ? Icons.keyboard_arrow_up
-                          : Icons.keyboard_arrow_down,
-                      color: AppColors.headingColor,
-                      size: 24,
                     ),
                   ],
                 ),
@@ -373,10 +464,7 @@ class EmployeeExpandableCard extends StatelessWidget {
                       value: employee.joiningDate,
                     ),
                     SizedBox(height: context.h(8)),
-                    DetailRow(
-                      label: 'Department',
-                      value: employee.department,
-                    ),
+                    DetailRow(label: 'Department', value: employee.department),
                     SizedBox(height: context.h(8)),
                     DetailRow(
                       label: 'Resignation Date',

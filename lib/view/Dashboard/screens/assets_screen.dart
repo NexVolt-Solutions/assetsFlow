@@ -362,6 +362,7 @@ class _AssetsScreenContentState extends State<AssetsScreenContent> {
           itemBuilder: (context, index) {
             final a = _filteredAssets[index];
             return AssetCard(
+              key: ValueKey(a.id),
               asset: a,
               icon: _iconForCategory(a.category),
               onEdit: () => _onEditAsset(a),
@@ -374,21 +375,24 @@ class _AssetsScreenContentState extends State<AssetsScreenContent> {
   }
 
   Widget _buildList(BuildContext context) {
-    return Column(
-      children: _filteredAssets
-          .map(
-            (a) => Padding(
-              padding: EdgeInsets.only(bottom: context.h(12)),
-              child: AssetCard(
-                asset: a,
-                icon: _iconForCategory(a.category),
-                isListTile: true,
-                onEdit: () => _onEditAsset(a),
-                onDelete: () => _onDeleteAsset(a),
-              ),
-            ),
-          )
-          .toList(),
+    return ListView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      itemCount: _filteredAssets.length,
+      itemBuilder: (context, index) {
+        final a = _filteredAssets[index];
+        return Padding(
+          key: ValueKey(a.id),
+          padding: EdgeInsets.only(bottom: context.h(12)),
+          child: AssetCard(
+            asset: a,
+            icon: _iconForCategory(a.category),
+            isListTile: true,
+            onEdit: () => _onEditAsset(a),
+            onDelete: () => _onDeleteAsset(a),
+          ),
+        );
+      },
     );
   }
 

@@ -1,13 +1,26 @@
 import 'package:asset_flow/Core/Constants/app_colors.dart';
 import 'package:asset_flow/Core/Constants/size_extension.dart';
+import 'package:asset_flow/Core/Model/employee_model.dart';
 import 'package:flutter/material.dart';
 
-/// Shows the Add Employee dialog. Returns [EmployeeDialogResult?] on Save, null on dismiss.
+/// Shows the Add Employee dialog. Returns [AddEmployeeDialogResult?] on Save, null on dismiss.
 Future<AddEmployeeDialogResult?> showAddEmployeeDialog(BuildContext context) {
   return showDialog<AddEmployeeDialogResult>(
     context: context,
     barrierColor: Colors.black54,
     builder: (context) => const AddEmployeeDialog(),
+  );
+}
+
+/// Shows the Edit Employee dialog with [employee] pre-filled. Returns [AddEmployeeDialogResult?] on Update, null on dismiss.
+Future<AddEmployeeDialogResult?> showEditEmployeeDialog(
+  BuildContext context,
+  EmployeeItem employee,
+) {
+  return showDialog<AddEmployeeDialogResult>(
+    context: context,
+    barrierColor: Colors.black54,
+    builder: (context) => AddEmployeeDialog(existing: employee),
   );
 }
 
@@ -32,7 +45,9 @@ class AddEmployeeDialogResult {
 }
 
 class AddEmployeeDialog extends StatefulWidget {
-  const AddEmployeeDialog({super.key});
+  final EmployeeItem? existing;
+
+  const AddEmployeeDialog({super.key, this.existing});
 
   @override
   State<AddEmployeeDialog> createState() => _AddEmployeeDialogState();
@@ -65,11 +80,51 @@ class _AddEmployeeDialogState extends State<AddEmployeeDialog> {
   @override
   void initState() {
     super.initState();
-    _employeeIdController = TextEditingController(text: _kDefaultId);
-    _employeeCodeController = TextEditingController(text: _kDefaultId);
-    _fullNameController = TextEditingController();
-    _joiningDateController = TextEditingController();
-    _resignationDateController = TextEditingController();
+    final existing = widget.existing;
+    if (existing != null) {
+      _employeeIdController = TextEditingController(text: existing.id);
+      _employeeCodeController = TextEditingController(text: existing.code);
+      _fullNameController = TextEditingController(text: existing.name);
+      _department = existing.department;
+      _status = existing.status;
+      _joiningDate = _parseDate(existing.joiningDate);
+      _resignationDate = existing.resignationDate != null
+          ? _parseDate(existing.resignationDate!)
+          : null;
+      _joiningDateController = TextEditingController(
+        text: _joiningDate != null ? _formatDate(_joiningDate!) : '',
+      );
+      _resignationDateController = TextEditingController(
+        text: _resignationDate != null ? _formatDate(_resignationDate!) : '',
+      );
+    } else {
+      _employeeIdController = TextEditingController(text: _kDefaultId);
+      _employeeCodeController = TextEditingController(text: _kDefaultId);
+      _fullNameController = TextEditingController();
+      _joiningDateController = TextEditingController();
+      _resignationDateController = TextEditingController();
+    }
+  }
+
+  static DateTime? _parseDate(String value) {
+    if (value.isEmpty) return null;
+    final iso = DateTime.tryParse(value);
+    if (iso != null) return iso;
+    final parts = value.split(RegExp(r'[/\-]'));
+    if (parts.length == 3) {
+      final m = int.tryParse(parts[0]);
+      final d = int.tryParse(parts[1]);
+      final y = int.tryParse(parts[2]);
+      if (m != null && d != null && y != null) {
+        if (m > 12) return DateTime.tryParse('$y-${parts[0].padLeft(2, '0')}-${parts[1].padLeft(2, '0')}');
+        return DateTime(y, m, d);
+      }
+    }
+    return null;
+  }
+
+  static String _formatDate(DateTime d) {
+    return '${d.month.toString().padLeft(2, '0')}/${d.day.toString().padLeft(2, '0')}/${d.year}';
   }
 
   @override
@@ -177,20 +232,21 @@ class _AddEmployeeDialogState extends State<AddEmployeeDialog> {
   }
 
   Widget _buildHeader(BuildContext context) {
+    final isEdit = widget.existing != null;
     return Row(
       children: [
         CircleAvatar(
           radius: 24,
           backgroundColor: AppColors.cardBackground,
           child: Icon(
-            Icons.person_add_rounded,
+            isEdit ? Icons.person : Icons.person_add_rounded,
             color: AppColors.headingColor,
             size: 28,
           ),
         ),
         SizedBox(width: context.w(14)),
         Text(
-          'Add Employee',
+          isEdit ? 'Edit Employee' : 'Add Employee',
           style: TextStyle(
             color: AppColors.headingColor,
             fontSize: context.text(22),
@@ -502,7 +558,7 @@ class _AddEmployeeDialogState extends State<AddEmployeeDialog> {
             padding: context.padSym(v: 14),
             child: Center(
               child: Text(
-                'Save Employee',
+                widget.existing != null ? 'Update Employee' : 'Save Employee',
                 style: TextStyle(
                   color: AppColors.headingColor,
                   fontSize: context.text(16),

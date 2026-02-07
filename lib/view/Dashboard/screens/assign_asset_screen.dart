@@ -225,13 +225,22 @@ class _AssignAssetScreenContentState extends State<AssignAssetScreenContent> {
                   ),
                 ),
                 SizedBox(height: context.h(12)),
-                ..._availableAssets.map(
-                  (asset) => _AssignableAssetTile(
-                    asset: asset,
-                    icon: _iconForCategory(asset.category),
-                    isSelected: _selectedAssetIds.contains(asset.id),
-                    onTap: () => _toggleAsset(asset.id),
-                  ),
+                ListView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: _availableAssets.length,
+                  itemBuilder: (context, index) {
+                    final asset = _availableAssets[index];
+                    return KeyedSubtree(
+                      key: ValueKey(asset.id),
+                      child: _AssignableAssetTile(
+                        asset: asset,
+                        icon: _iconForCategory(asset.category),
+                        isSelected: _selectedAssetIds.contains(asset.id),
+                        onTap: () => _toggleAsset(asset.id),
+                      ),
+                    );
+                  },
                 ),
                 SizedBox(height: context.h(24)),
                 SizedBox(

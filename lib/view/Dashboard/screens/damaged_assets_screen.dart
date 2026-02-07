@@ -168,6 +168,7 @@ class _DamagedAssetsScreenContentState
                 itemBuilder: (context, index) {
                   final asset = _damagedAssets[index];
                   return DamagedAssetCard(
+                    key: ValueKey(asset.id),
                     asset: asset,
                     icon: _iconForCategory(asset.category),
                     onSendToRepair: () => _onSendToRepair(asset),

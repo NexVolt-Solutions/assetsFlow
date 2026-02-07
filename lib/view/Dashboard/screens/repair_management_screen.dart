@@ -127,18 +127,25 @@ class _RepairManagementScreenContentState
           SizedBox(height: context.h(24)),
           _buildStatusLegend(context),
           SizedBox(height: context.h(20)),
-          ..._repairList.map(
-            (entry) => Padding(
-              padding: EdgeInsets.only(bottom: context.h(16)),
-              child: RepairAssetCard(
-                entry: entry,
-                onMarkFixed: () => _updateStatus(entry, RepairStatus.fixed),
-                onUnderRepair: () =>
-                    _updateStatus(entry, RepairStatus.inRepair),
-                onNotRepairable: () =>
-                    _updateStatus(entry, RepairStatus.notRepairable),
-              ),
-            ),
+          ListView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: _repairList.length,
+            itemBuilder: (context, index) {
+              final entry = _repairList[index];
+              return Padding(
+                key: ValueKey(entry.id),
+                padding: EdgeInsets.only(bottom: context.h(16)),
+                child: RepairAssetCard(
+                  entry: entry,
+                  onMarkFixed: () => _updateStatus(entry, RepairStatus.fixed),
+                  onUnderRepair: () =>
+                      _updateStatus(entry, RepairStatus.inRepair),
+                  onNotRepairable: () =>
+                      _updateStatus(entry, RepairStatus.notRepairable),
+                ),
+              );
+            },
           ),
         ],
       ),
