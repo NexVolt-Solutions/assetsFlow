@@ -25,4 +25,13 @@ class AppColors {
   static const Color assignCardBg = Color(0xFF292C3D);
   static const Color dropdownBorder = Color(0xFF5A61A2);
   static const Color assignButtonBg = Color(0xFF3A3D52);
+
+  // Damaged Assets screen
+  static const Color damagedCardBg = Color(0xFF3A3D52);
+  static const Color damagedPillBg = Color(0xFFB03A5F);
+  static const Color damagedIconBorder = Color(0xFFD1456F);
+  static const Color sendToRepairButtonBg = Color(0xFFEFCB4B);
+  static const Color sendToRepairButtonBorder = Color(0xFFD4A83A);
+  static const Color removeButtonBg = Color(0xFFD1456F);
+  static const Color removeButtonBorder = Color(0xFFB03A5F);
 }

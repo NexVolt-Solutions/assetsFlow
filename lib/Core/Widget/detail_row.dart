@@ -7,12 +7,14 @@ class DetailRow extends StatelessWidget {
   final String label;
   final String value;
   final double? labelWidth;
+  final Color? valueColor;
 
   const DetailRow({
     super.key,
     required this.label,
     required this.value,
     this.labelWidth = 130,
+    this.valueColor,
   });
 
   @override
@@ -35,7 +37,7 @@ class DetailRow extends StatelessWidget {
           child: Text(
             value,
             style: TextStyle(
-              color: AppColors.headingColor,
+              color: valueColor ?? AppColors.headingColor,
               fontSize: context.text(13),
               fontWeight: FontWeight.w500,
             ),

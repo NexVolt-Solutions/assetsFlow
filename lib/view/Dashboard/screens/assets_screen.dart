@@ -356,7 +356,7 @@ class _AssetsScreenContentState extends State<AssetsScreenContent> {
             crossAxisCount: crossAxisCount,
             mainAxisSpacing: 12,
             crossAxisSpacing: 12,
-            childAspectRatio: 0.82,
+            childAspectRatio: 1.0,
           ),
           itemCount: _filteredAssets.length,
           itemBuilder: (context, index) {
@@ -431,7 +431,10 @@ class _AssetsScreenContentState extends State<AssetsScreenContent> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: Text('Cancel', style: TextStyle(color: AppColors.subHeadingColor)),
+            child: Text(
+              'Cancel',
+              style: TextStyle(color: AppColors.subHeadingColor),
+            ),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
@@ -441,7 +444,9 @@ class _AssetsScreenContentState extends State<AssetsScreenContent> {
       ),
     );
     if (confirm == true && mounted) {
-      setState(() => _allAssets = _allAssets.where((item) => item.id != a.id).toList());
+      setState(
+        () => _allAssets = _allAssets.where((item) => item.id != a.id).toList(),
+      );
     }
   }
 }
@@ -533,86 +538,92 @@ class AssetCard extends StatelessWidget {
   Widget _buildGridContent(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        return FittedBox(
-          fit: BoxFit.scaleDown,
-          alignment: Alignment.topLeft,
-          child: ConstrainedBox(
-            constraints: BoxConstraints(
-              maxWidth: constraints.maxWidth,
-              maxHeight: constraints.maxHeight,
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
+        return ConstrainedBox(
+          constraints: BoxConstraints(
+            maxWidth: constraints.maxWidth,
+            maxHeight: constraints.maxHeight,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  CircleAvatar(
+                    radius: 22,
+                    backgroundColor: AppColors.listAvatarBg,
+                    child: Icon(icon, color: AppColors.headingColor, size: 26),
+                  ),
+                  const Spacer(),
+                  _StatusPill(status: asset.status),
+                ],
+              ),
+              SizedBox(height: context.h(12)),
+              Text(
+                asset.name,
+                style: TextStyle(
+                  color: AppColors.headingColor,
+                  fontSize: context.text(15),
+                  fontWeight: FontWeight.w600,
+                ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+              SizedBox(height: context.h(4)),
+              Text(
+                asset.assetId,
+                style: TextStyle(
+                  color: AppColors.subHeadingColor,
+                  fontSize: context.text(13),
+                  fontWeight: FontWeight.w400,
+                ),
+              ),
+              SizedBox(height: context.h(12)),
+              _DetailLine(label: 'Brand', value: asset.brand),
+              SizedBox(height: context.h(4)),
+              _DetailLine(label: 'Model', value: asset.model),
+              SizedBox(height: context.h(4)),
+              _DetailLine(label: 'Condition', value: asset.condition),
+              SizedBox(height: context.h(4)),
+              _DetailLine(label: 'Assigned To', value: asset.assignedTo),
+              if (onEdit != null || onDelete != null) ...[
+                SizedBox(height: context.h(12)),
                 Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.end,
                   children: [
-                    CircleAvatar(
-                      radius: 22,
-                      backgroundColor: AppColors.listAvatarBg,
-                      child: Icon(
-                        icon,
-                        color: AppColors.headingColor,
-                        size: 26,
+                    if (onEdit != null)
+                      IconButton(
+                        onPressed: onEdit,
+                        icon: Icon(
+                          Icons.edit_outlined,
+                          color: AppColors.headingColor,
+                          size: 20,
+                        ),
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(
+                          minWidth: 32,
+                          minHeight: 32,
+                        ),
                       ),
-                    ),
-                    const Spacer(),
-                    _StatusPill(status: asset.status),
+                    if (onDelete != null)
+                      IconButton(
+                        onPressed: onDelete,
+                        icon: Icon(
+                          Icons.delete_outline,
+                          color: AppColors.redColor,
+                          size: 20,
+                        ),
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(
+                          minWidth: 32,
+                          minHeight: 32,
+                        ),
+                      ),
                   ],
                 ),
-                SizedBox(height: context.h(12)),
-                Text(
-                  asset.name,
-                  style: TextStyle(
-                    color: AppColors.headingColor,
-                    fontSize: context.text(15),
-                    fontWeight: FontWeight.w600,
-                  ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                SizedBox(height: context.h(4)),
-                Text(
-                  asset.assetId,
-                  style: TextStyle(
-                    color: AppColors.subHeadingColor,
-                    fontSize: context.text(13),
-                    fontWeight: FontWeight.w400,
-                  ),
-                ),
-                SizedBox(height: context.h(12)),
-                _DetailLine(label: 'Brand', value: asset.brand),
-                SizedBox(height: context.h(4)),
-                _DetailLine(label: 'Model', value: asset.model),
-                SizedBox(height: context.h(4)),
-                _DetailLine(label: 'Condition', value: asset.condition),
-                SizedBox(height: context.h(4)),
-                _DetailLine(label: 'Assigned To', value: asset.assignedTo),
-                if (onEdit != null || onDelete != null) ...[
-                  SizedBox(height: context.h(12)),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      if (onEdit != null)
-                        IconButton(
-                          onPressed: onEdit,
-                          icon: Icon(Icons.edit_outlined, color: AppColors.headingColor, size: 20),
-                          padding: EdgeInsets.zero,
-                          constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-                        ),
-                      if (onDelete != null)
-                        IconButton(
-                          onPressed: onDelete,
-                          icon: Icon(Icons.delete_outline, color: AppColors.redColor, size: 20),
-                          padding: EdgeInsets.zero,
-                          constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-                        ),
-                    ],
-                  ),
-                ],
               ],
-            ),
+            ],
           ),
         );
       },
@@ -651,16 +662,30 @@ class AssetCard extends StatelessWidget {
                   if (onEdit != null)
                     IconButton(
                       onPressed: onEdit,
-                      icon: Icon(Icons.edit_outlined, color: AppColors.headingColor, size: 20),
+                      icon: Icon(
+                        Icons.edit_outlined,
+                        color: AppColors.headingColor,
+                        size: 20,
+                      ),
                       padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                      constraints: const BoxConstraints(
+                        minWidth: 32,
+                        minHeight: 32,
+                      ),
                     ),
                   if (onDelete != null)
                     IconButton(
                       onPressed: onDelete,
-                      icon: Icon(Icons.delete_outline, color: AppColors.redColor, size: 20),
+                      icon: Icon(
+                        Icons.delete_outline,
+                        color: AppColors.redColor,
+                        size: 20,
+                      ),
                       padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                      constraints: const BoxConstraints(
+                        minWidth: 32,
+                        minHeight: 32,
+                      ),
                     ),
                 ],
               ),

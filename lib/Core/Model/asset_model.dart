@@ -9,6 +9,8 @@ class AssetItem {
   final String model;
   final String condition;
   final String assignedTo;
+  /// When in store, optional name of employee who last returned it.
+  final String? lastReturnedBy;
 
   AssetItem({
     required this.id,
@@ -20,5 +22,6 @@ class AssetItem {
     required this.model,
     required this.condition,
     required this.assignedTo,
+    this.lastReturnedBy,
   });
 }
