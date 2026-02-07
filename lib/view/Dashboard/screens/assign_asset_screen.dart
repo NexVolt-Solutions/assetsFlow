@@ -15,11 +15,19 @@ class AssignAssetScreenContent extends StatefulWidget {
 }
 
 class _AssignAssetScreenContentState extends State<AssignAssetScreenContent> {
-  EmployeeItem? _selectedEmployee;
+  String? _selectedEmployeeId;
   final Set<String> _selectedAssetIds = {};
   late List<AssetItem> _availableAssets = kDemoAssets;
 
   List<EmployeeItem> get _employees => kDemoEmployees;
+
+  EmployeeItem? get _selectedEmployee {
+    if (_selectedEmployeeId == null) return null;
+    for (final e in _employees) {
+      if (e.id == _selectedEmployeeId) return e;
+    }
+    return null;
+  }
 
   static IconData _iconForCategory(String category) {
     switch (category.toLowerCase()) {
@@ -166,8 +174,10 @@ class _AssignAssetScreenContentState extends State<AssignAssetScreenContent> {
             color: AppColors.cardBackground,
             borderRadius: BorderRadius.circular(context.radius(10)),
           ),
-          child: DropdownButtonFormField<EmployeeItem>(
-            value: _selectedEmployee,
+          child: DropdownButtonFormField<String>(
+            value: _employees.any((e) => e.id == _selectedEmployeeId)
+                ? _selectedEmployeeId
+                : null,
             hint: Text(
               'Choose an employee...',
               style: TextStyle(
@@ -177,8 +187,8 @@ class _AssignAssetScreenContentState extends State<AssignAssetScreenContent> {
             ),
             items: _employees
                 .map(
-                  (e) => DropdownMenuItem(
-                    value: e,
+                  (e) => DropdownMenuItem<String>(
+                    value: e.id,
                     child: Text(
                       '${e.name} · ${e.code}',
                       style: TextStyle(
@@ -190,7 +200,7 @@ class _AssignAssetScreenContentState extends State<AssignAssetScreenContent> {
                   ),
                 )
                 .toList(),
-            onChanged: (v) => setState(() => _selectedEmployee = v),
+            onChanged: (v) => setState(() => _selectedEmployeeId = v),
             dropdownColor: AppColors.cardBackground,
             decoration: const InputDecoration(
               border: InputBorder.none,
