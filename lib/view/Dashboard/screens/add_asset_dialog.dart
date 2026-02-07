@@ -1,5 +1,6 @@
 import 'package:asset_flow/Core/Constants/app_colors.dart';
 import 'package:asset_flow/Core/Constants/size_extension.dart';
+import 'package:asset_flow/Core/Model/asset_model.dart';
 import 'package:flutter/material.dart';
 
 /// Shows the Add Asset dialog. Returns [AddAssetDialogResult?] on Save, null on dismiss.
@@ -8,6 +9,18 @@ Future<AddAssetDialogResult?> showAddAssetDialog(BuildContext context) {
     context: context,
     barrierColor: Colors.black54,
     builder: (context) => const AddAssetDialog(),
+  );
+}
+
+/// Shows the Edit Asset dialog with [existing] pre-filled. Returns [AddAssetDialogResult?] on Save.
+Future<AddAssetDialogResult?> showEditAssetDialog(
+  BuildContext context,
+  AssetItem existing,
+) {
+  return showDialog<AddAssetDialogResult>(
+    context: context,
+    barrierColor: Colors.black54,
+    builder: (context) => AddAssetDialog(initialAsset: existing),
   );
 }
 
@@ -85,7 +98,9 @@ const List<String> _categories = [
 ];
 
 class AddAssetDialog extends StatefulWidget {
-  const AddAssetDialog({super.key});
+  final AssetItem? initialAsset;
+
+  const AddAssetDialog({super.key, this.initialAsset});
 
   @override
   State<AddAssetDialog> createState() => _AddAssetDialogState();
@@ -102,6 +117,8 @@ class _AddAssetDialogState extends State<AddAssetDialog> {
   String? _model;
   String _condition = _conditions.first;
 
+  bool get _isEditMode => widget.initialAsset != null;
+
   List<String> get _brands => _categoryToBrands[_category] ?? [];
   List<String> get _versions => (_brand != null && _brandToVersions.containsKey(_brand))
       ? _brandToVersions[_brand]!
@@ -113,11 +130,22 @@ class _AddAssetDialogState extends State<AddAssetDialog> {
   @override
   void initState() {
     super.initState();
-    _assetNameController = TextEditingController(text: 'MACBOOK PRO');
-    _assetCodeController = TextEditingController(text: 'EMP009');
-    _brand = _brands.isNotEmpty ? _brands.first : null;
-    _version = _versions.isNotEmpty ? _versions.first : null;
-    _model = _models.isNotEmpty ? _models.first : null;
+    final existing = widget.initialAsset;
+    if (existing != null) {
+      _assetNameController = TextEditingController(text: existing.name);
+      _assetCodeController = TextEditingController(text: existing.assetId);
+      _category = _categories.contains(existing.category) ? existing.category : _categories.first;
+      _brand = _brands.contains(existing.brand) ? existing.brand : (_brands.isNotEmpty ? _brands.first : null);
+      _version = _versions.isNotEmpty ? _versions.first : null;
+      _model = _models.contains(existing.model) ? existing.model : (_models.isNotEmpty ? _models.first : null);
+      _condition = _conditions.contains(existing.condition) ? existing.condition : _conditions.first;
+    } else {
+      _assetNameController = TextEditingController(text: 'MACBOOK PRO');
+      _assetCodeController = TextEditingController(text: 'EMP009');
+      _brand = _brands.isNotEmpty ? _brands.first : null;
+      _version = _versions.isNotEmpty ? _versions.first : null;
+      _model = _models.isNotEmpty ? _models.first : null;
+    }
   }
 
   @override
@@ -207,7 +235,7 @@ class _AddAssetDialogState extends State<AddAssetDialog> {
         ),
         SizedBox(width: context.w(14)),
         Text(
-          'Add Asset',
+          _isEditMode ? 'Edit Asset' : 'Add Asset',
           style: TextStyle(
             color: AppColors.headingColor,
             fontSize: context.text(22),
@@ -414,7 +442,7 @@ class _AddAssetDialogState extends State<AddAssetDialog> {
             padding: context.padSym(v: 14),
             child: Center(
               child: Text(
-                'Save Asset',
+                _isEditMode ? 'Update Asset' : 'Save Asset',
                 style: TextStyle(
                   color: AppColors.headingColor,
                   fontSize: context.text(16),

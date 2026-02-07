@@ -359,10 +359,15 @@ class _AssetsScreenContentState extends State<AssetsScreenContent> {
             childAspectRatio: 0.82,
           ),
           itemCount: _filteredAssets.length,
-          itemBuilder: (context, index) => AssetCard(
-            asset: _filteredAssets[index],
-            icon: _iconForCategory(_filteredAssets[index].category),
-          ),
+          itemBuilder: (context, index) {
+            final a = _filteredAssets[index];
+            return AssetCard(
+              asset: a,
+              icon: _iconForCategory(a.category),
+              onEdit: () => _onEditAsset(a),
+              onDelete: () => _onDeleteAsset(a),
+            );
+          },
         );
       },
     );
@@ -378,11 +383,66 @@ class _AssetsScreenContentState extends State<AssetsScreenContent> {
                 asset: a,
                 icon: _iconForCategory(a.category),
                 isListTile: true,
+                onEdit: () => _onEditAsset(a),
+                onDelete: () => _onDeleteAsset(a),
               ),
             ),
           )
           .toList(),
     );
+  }
+
+  Future<void> _onEditAsset(AssetItem a) async {
+    final result = await showEditAssetDialog(context, a);
+    if (result == null || !mounted) return;
+    setState(() {
+      _allAssets = _allAssets.map((item) {
+        if (item.id == a.id) {
+          return AssetItem(
+            id: item.id,
+            name: result.assetName,
+            assetId: result.assetCode,
+            category: result.category,
+            status: item.status,
+            brand: result.brand,
+            model: result.model,
+            condition: result.condition,
+            assignedTo: item.assignedTo,
+          );
+        }
+        return item;
+      }).toList();
+    });
+  }
+
+  Future<void> _onDeleteAsset(AssetItem a) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppColors.cardBackground,
+        title: Text(
+          'Delete Asset',
+          style: TextStyle(color: AppColors.headingColor),
+        ),
+        content: Text(
+          'Remove "${a.name}" (${a.assetId})?',
+          style: TextStyle(color: AppColors.subHeadingColor),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text('Cancel', style: TextStyle(color: AppColors.subHeadingColor)),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text('Delete', style: TextStyle(color: AppColors.redColor)),
+          ),
+        ],
+      ),
+    );
+    if (confirm == true && mounted) {
+      setState(() => _allAssets = _allAssets.where((item) => item.id != a.id).toList());
+    }
   }
 }
 
@@ -444,12 +504,16 @@ class AssetCard extends StatelessWidget {
   final AssetItem asset;
   final IconData icon;
   final bool isListTile;
+  final VoidCallback? onEdit;
+  final VoidCallback? onDelete;
 
   const AssetCard({
     super.key,
     required this.asset,
     required this.icon,
     this.isListTile = false,
+    this.onEdit,
+    this.onDelete,
   });
 
   @override
@@ -525,6 +589,28 @@ class AssetCard extends StatelessWidget {
                 _DetailLine(label: 'Condition', value: asset.condition),
                 SizedBox(height: context.h(4)),
                 _DetailLine(label: 'Assigned To', value: asset.assignedTo),
+                if (onEdit != null || onDelete != null) ...[
+                  SizedBox(height: context.h(12)),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      if (onEdit != null)
+                        IconButton(
+                          onPressed: onEdit,
+                          icon: Icon(Icons.edit_outlined, color: AppColors.headingColor, size: 20),
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                        ),
+                      if (onDelete != null)
+                        IconButton(
+                          onPressed: onDelete,
+                          icon: Icon(Icons.delete_outline, color: AppColors.redColor, size: 20),
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                        ),
+                    ],
+                  ),
+                ],
               ],
             ),
           ),
@@ -562,6 +648,20 @@ class AssetCard extends StatelessWidget {
                     ),
                   ),
                   _StatusPill(status: asset.status),
+                  if (onEdit != null)
+                    IconButton(
+                      onPressed: onEdit,
+                      icon: Icon(Icons.edit_outlined, color: AppColors.headingColor, size: 20),
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                    ),
+                  if (onDelete != null)
+                    IconButton(
+                      onPressed: onDelete,
+                      icon: Icon(Icons.delete_outline, color: AppColors.redColor, size: 20),
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                    ),
                 ],
               ),
               SizedBox(height: context.h(4)),
