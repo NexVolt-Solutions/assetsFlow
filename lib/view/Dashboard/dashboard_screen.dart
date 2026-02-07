@@ -2,6 +2,7 @@ import 'package:asset_flow/Core/Constants/app_colors.dart';
 import 'package:asset_flow/Core/Constants/dashboard_constants.dart';
 import 'package:asset_flow/Core/Constants/size_extension.dart';
 import 'package:asset_flow/Core/utils/Routes/routes_name.dart';
+import 'package:asset_flow/view/Dashboard/screens/assets_screen.dart';
 import 'package:asset_flow/view/Dashboard/screens/employee_screen.dart';
 import 'package:asset_flow/view/Dashboard/widgets/dashboard_app_bar.dart';
 import 'package:asset_flow/view/Dashboard/widgets/dashboard_overview_content.dart';
@@ -38,7 +39,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       case DashboardNavItem.employee:
         return const EmployeeScreenContent();
       case DashboardNavItem.assets:
-        return NavPlaceholderScreen(navItem: DashboardNavItem.assets);
+        return const AssetsScreenContent();
       case DashboardNavItem.assignAssets:
         return NavPlaceholderScreen(navItem: DashboardNavItem.assignAssets);
       case DashboardNavItem.storeInventory:
