@@ -13,7 +13,7 @@ class Routes {
           settings: settings,
           builder: (_) => LoginScreen(),
         );
-      case RoutesName.SignUpScreen:
+      case RoutesName.signUpScreen:
         return MaterialPageRoute(
           settings: settings,
           builder: (_) => SignUpScreen(),
