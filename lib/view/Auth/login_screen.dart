@@ -76,7 +76,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   SizedBox(height: context.h(20)),
                   CustomTextField(
                     labelText: "Email",
-                    hintText: "admin@assetflow.com",
+                    hintText: "Enter email",
                     keyboardType: TextInputType.emailAddress,
                     validator: (value) {
                       if (value == null || value.isEmpty) {
