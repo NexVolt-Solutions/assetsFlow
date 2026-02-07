@@ -1,6 +1,7 @@
 import 'package:asset_flow/Core/Constants/app_colors.dart';
 import 'package:asset_flow/Core/Constants/size_extension.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
@@ -152,6 +153,9 @@ class _AssetReportsScreenContentState extends State<AssetReportsScreenContent> {
   }
 
   Future<void> _downloadPdf() async {
+    // Use Unicode-capable theme (OpenSans) so Helvetica is not used for text.
+    await pdfDefaultTheme();
+
     final pdf = pw.Document();
     pdf.addPage(
       pw.MultiPage(
@@ -161,10 +165,7 @@ class _AssetReportsScreenContentState extends State<AssetReportsScreenContent> {
             level: 0,
             child: pw.Text(
               'Asset Reports - ${_period.label}',
-              style: pw.TextStyle(
-                fontSize: 22,
-                fontWeight: pw.FontWeight.bold,
-              ),
+              style: pw.TextStyle(fontSize: 22, fontWeight: pw.FontWeight.bold),
             ),
           ),
           pw.SizedBox(height: 20),
@@ -204,25 +205,45 @@ class _AssetReportsScreenContentState extends State<AssetReportsScreenContent> {
         ],
       ),
     );
-    await Printing.layoutPdf(
-      onLayout: (format) async => pdf.save(),
-      name: 'Asset_Report_${_period.label}_${DateTime.now().millisecondsSinceEpoch}.pdf',
-    );
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('PDF ready to save or print'),
-          backgroundColor: AppColors.reportPillRepair,
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
+
+    final bytes = await pdf.save();
+    final filename =
+        'Asset_Report_${_period.label}_${DateTime.now().millisecondsSinceEpoch}.pdf';
+
+    try {
+      final ok = await Printing.sharePdf(bytes: bytes, filename: filename);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              ok ? 'PDF ready to save or share' : 'PDF could not be shared',
+            ),
+            backgroundColor: ok
+                ? AppColors.reportPillRepair
+                : Colors.red.shade700,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } on MissingPluginException catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text(
+              'Save/print is not supported on this platform. Use desktop or mobile for full support.',
+            ),
+            backgroundColor: Colors.orange.shade700,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
     }
   }
 
   pw.Widget _pdfCell(String text) => pw.Padding(
-        padding: const pw.EdgeInsets.all(6),
-        child: pw.Text(text, style: const pw.TextStyle(fontSize: 10)),
-      );
+    padding: const pw.EdgeInsets.all(6),
+    child: pw.Text(text, style: const pw.TextStyle(fontSize: 10)),
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -269,8 +290,9 @@ class _AssetReportsScreenContentState extends State<AssetReportsScreenContent> {
                               ? AppColors.headingColor
                               : AppColors.subHeadingColor,
                           fontSize: context.text(14),
-                          fontWeight:
-                              isActive ? FontWeight.w600 : FontWeight.w500,
+                          fontWeight: isActive
+                              ? FontWeight.w600
+                              : FontWeight.w500,
                         ),
                       ),
                     ),
@@ -325,25 +347,17 @@ class _AssetReportsScreenContentState extends State<AssetReportsScreenContent> {
               borderRadius: BorderRadius.circular(context.radius(12)),
             ),
             clipBehavior: Clip.hardEdge,
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: ConstrainedBox(
-                constraints: BoxConstraints(
-                  minWidth: 520,
-                ),
-                child: Column(
-                  children: [
-                    _buildTableHeader(context),
-                    ...List.generate(_filteredEntries.length, (i) {
-                      return _ReportRow(
-                        entry: _filteredEntries[i],
-                        isStripe: i.isOdd,
-                        icon: _iconForCategory(_filteredEntries[i].assetCategory),
-                      );
-                    }),
-                  ],
-                ),
-              ),
+            child: Column(
+              children: [
+                _buildTableHeader(context),
+                ...List.generate(_filteredEntries.length, (i) {
+                  return _ReportRow(
+                    entry: _filteredEntries[i],
+                    isStripe: i.isOdd,
+                    icon: _iconForCategory(_filteredEntries[i].assetCategory),
+                  );
+                }),
+              ],
             ),
           ),
         ],
@@ -369,13 +383,13 @@ class _AssetReportsScreenContentState extends State<AssetReportsScreenContent> {
   }
 
   Widget _headerText(String label) => Text(
-        label,
-        style: TextStyle(
-          color: AppColors.subHeadingColor,
-          fontSize: 13,
-          fontWeight: FontWeight.w600,
-        ),
-      );
+    label,
+    style: TextStyle(
+      color: AppColors.subHeadingColor,
+      fontSize: 13,
+      fontWeight: FontWeight.w600,
+    ),
+  );
 }
 
 class _ReportRow extends StatelessWidget {
