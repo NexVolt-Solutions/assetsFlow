@@ -3,31 +3,33 @@ import 'package:asset_flow/Core/Constants/size_extension.dart';
 import 'package:asset_flow/Core/Model/asset_model.dart';
 import 'package:asset_flow/Core/Model/employee_model.dart';
 import 'package:asset_flow/Core/Widget/primary_action_button.dart';
-import 'package:asset_flow/view/Dashboard/screens/assets_screen.dart' show kDemoAssets;
-import 'package:asset_flow/view/Dashboard/screens/employee_screen.dart' show kDemoEmployees;
+import 'package:asset_flow/view/Dashboard/screens/assets_screen.dart'
+    show kDemoAssets;
+import 'package:asset_flow/view/Dashboard/screens/employee_screen.dart'
+    show kDemoEmployees;
 import 'package:flutter/material.dart';
 
 class AssignAssetScreenContent extends StatefulWidget {
   const AssignAssetScreenContent({super.key});
 
   @override
-  State<AssignAssetScreenContent> createState() => _AssignAssetScreenContentState();
+  State<AssignAssetScreenContent> createState() =>
+      _AssignAssetScreenContentState();
 }
 
 class _AssignAssetScreenContentState extends State<AssignAssetScreenContent> {
-  String? _selectedEmployeeId;
+  int? _selectedEmployeeIndex;
   final Set<String> _selectedAssetIds = {};
   late List<AssetItem> _availableAssets = kDemoAssets;
 
   List<EmployeeItem> get _employees => kDemoEmployees;
 
-  EmployeeItem? get _selectedEmployee {
-    if (_selectedEmployeeId == null) return null;
-    for (final e in _employees) {
-      if (e.id == _selectedEmployeeId) return e;
-    }
-    return null;
-  }
+  EmployeeItem? get _selectedEmployee =>
+      _selectedEmployeeIndex != null &&
+          _selectedEmployeeIndex! >= 0 &&
+          _selectedEmployeeIndex! < _employees.length
+      ? _employees[_selectedEmployeeIndex!]
+      : null;
 
   static IconData _iconForCategory(String category) {
     switch (category.toLowerCase()) {
@@ -174,9 +176,12 @@ class _AssignAssetScreenContentState extends State<AssignAssetScreenContent> {
             color: AppColors.cardBackground,
             borderRadius: BorderRadius.circular(context.radius(10)),
           ),
-          child: DropdownButtonFormField<String>(
-            value: _employees.any((e) => e.id == _selectedEmployeeId)
-                ? _selectedEmployeeId
+          child: DropdownButtonFormField<int>(
+            value:
+                _selectedEmployeeIndex != null &&
+                    _selectedEmployeeIndex! >= 0 &&
+                    _selectedEmployeeIndex! < _employees.length
+                ? _selectedEmployeeIndex
                 : null,
             hint: Text(
               'Choose an employee...',
@@ -185,22 +190,21 @@ class _AssignAssetScreenContentState extends State<AssignAssetScreenContent> {
                 fontSize: context.text(14),
               ),
             ),
-            items: _employees
-                .map(
-                  (e) => DropdownMenuItem<String>(
-                    value: e.id,
-                    child: Text(
-                      '${e.name} · ${e.code}',
-                      style: TextStyle(
-                        color: AppColors.headingColor,
-                        fontSize: context.text(14),
-                      ),
-                      overflow: TextOverflow.ellipsis,
-                    ),
+            items: List.generate(
+              _employees.length,
+              (i) => DropdownMenuItem<int>(
+                value: i,
+                child: Text(
+                  '${_employees[i].name} · ${_employees[i].code}',
+                  style: TextStyle(
+                    color: AppColors.headingColor,
+                    fontSize: context.text(14),
                   ),
-                )
-                .toList(),
-            onChanged: (v) => setState(() => _selectedEmployeeId = v),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ),
+            onChanged: (v) => setState(() => _selectedEmployeeIndex = v),
             dropdownColor: AppColors.cardBackground,
             decoration: const InputDecoration(
               border: InputBorder.none,
@@ -231,12 +235,14 @@ class _AssignAssetScreenContentState extends State<AssignAssetScreenContent> {
           ),
         ),
         SizedBox(height: context.h(12)),
-        ..._availableAssets.map((asset) => _AssignableAssetTile(
-              asset: asset,
-              icon: _iconForCategory(asset.category),
-              isSelected: _selectedAssetIds.contains(asset.id),
-              onTap: () => _toggleAsset(asset.id),
-            )),
+        ..._availableAssets.map(
+          (asset) => _AssignableAssetTile(
+            asset: asset,
+            icon: _iconForCategory(asset.category),
+            isSelected: _selectedAssetIds.contains(asset.id),
+            onTap: () => _toggleAsset(asset.id),
+          ),
+        ),
       ],
     );
   }
@@ -302,8 +308,12 @@ class _AssignableAssetTile extends StatelessWidget {
                   ),
                 ),
                 Icon(
-                  isSelected ? Icons.check_circle : Icons.radio_button_unchecked,
-                  color: isSelected ? AppColors.headingColor : AppColors.subHeadingColor,
+                  isSelected
+                      ? Icons.check_circle
+                      : Icons.radio_button_unchecked,
+                  color: isSelected
+                      ? AppColors.headingColor
+                      : AppColors.subHeadingColor,
                   size: 24,
                 ),
               ],
