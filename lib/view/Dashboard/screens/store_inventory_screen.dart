@@ -151,92 +151,96 @@ class StoreItemCard extends StatelessWidget {
         color: AppColors.cardBackground,
         borderRadius: BorderRadius.circular(context.radius(12)),
       ),
+      clipBehavior: Clip.hardEdge,
       child: LayoutBuilder(
         builder: (context, constraints) {
-          return ConstrainedBox(
-            constraints: BoxConstraints(
-              maxWidth: constraints.maxWidth,
-              maxHeight: constraints.maxHeight,
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    CircleAvatar(
-                      radius: 22,
-                      backgroundColor: AppColors.listAvatarBg,
-                      child: Icon(
-                        icon,
-                        color: AppColors.headingColor,
-                        size: 26,
-                      ),
-                    ),
-                    const Spacer(),
-                    Container(
-                      padding: context.padSym(h: 10, v: 5),
-                      decoration: BoxDecoration(
-                        color: AppColors.statusPillActive,
-                        borderRadius: BorderRadius.circular(context.radius(16)),
-                      ),
-                      child: Text(
-                        'Available',
-                        style: TextStyle(
+          return SizedBox(
+            height: constraints.maxHeight,
+            width: constraints.maxWidth,
+            child: SingleChildScrollView(
+              physics: const ClampingScrollPhysics(),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      CircleAvatar(
+                        radius: 22,
+                        backgroundColor: AppColors.listAvatarBg,
+                        child: Icon(
+                          icon,
                           color: AppColors.headingColor,
-                          fontSize: context.text(11),
-                          fontWeight: FontWeight.w500,
+                          size: 26,
                         ),
                       ),
-                    ),
-                  ],
-                ),
-                SizedBox(height: context.h(12)),
-                Text(
-                  asset.name,
-                  style: TextStyle(
-                    color: AppColors.headingColor,
-                    fontSize: context.text(15),
-                    fontWeight: FontWeight.w600,
+                      const Spacer(),
+                      Container(
+                        padding: context.padSym(h: 10, v: 5),
+                        decoration: BoxDecoration(
+                          color: AppColors.statusPillActive,
+                          borderRadius: BorderRadius.circular(
+                            context.radius(16),
+                          ),
+                        ),
+                        child: Text(
+                          'Available',
+                          style: TextStyle(
+                            color: AppColors.headingColor,
+                            fontSize: context.text(11),
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                SizedBox(height: context.h(4)),
-                Text(
-                  asset.assetId,
-                  style: TextStyle(
-                    color: AppColors.subHeadingColor,
-                    fontSize: context.text(13),
-                    fontWeight: FontWeight.w400,
-                  ),
-                ),
-                SizedBox(height: context.h(12)),
-                DetailRow(label: 'Brand', value: asset.brand, labelWidth: 70),
-                SizedBox(height: context.h(4)),
-                DetailRow(label: 'Model', value: asset.model, labelWidth: 70),
-                SizedBox(height: context.h(4)),
-                DetailRow(
-                  label: 'Condition',
-                  value: asset.condition,
-                  labelWidth: 70,
-                ),
-                if (asset.lastReturnedBy != null &&
-                    asset.lastReturnedBy!.isNotEmpty) ...[
-                  SizedBox(height: context.h(10)),
+                  SizedBox(height: context.h(12)),
                   Text(
-                    'Last: Returned to Store — ${asset.lastReturnedBy}',
+                    asset.name,
                     style: TextStyle(
-                      color: AppColors.subHeadingColor,
-                      fontSize: context.text(12),
-                      fontWeight: FontWeight.w400,
+                      color: AppColors.headingColor,
+                      fontSize: context.text(15),
+                      fontWeight: FontWeight.w600,
                     ),
-                    maxLines: 1,
+                    maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
+                  SizedBox(height: context.h(4)),
+                  Text(
+                    asset.assetId,
+                    style: TextStyle(
+                      color: AppColors.subHeadingColor,
+                      fontSize: context.text(13),
+                      fontWeight: FontWeight.w400,
+                    ),
+                  ),
+                  SizedBox(height: context.h(12)),
+                  DetailRow(label: 'Brand', value: asset.brand, labelWidth: 70),
+                  SizedBox(height: context.h(4)),
+                  DetailRow(label: 'Model', value: asset.model, labelWidth: 70),
+                  SizedBox(height: context.h(4)),
+                  DetailRow(
+                    label: 'Condition',
+                    value: asset.condition,
+                    labelWidth: 70,
+                  ),
+                  if (asset.lastReturnedBy != null &&
+                      asset.lastReturnedBy!.isNotEmpty) ...[
+                    SizedBox(height: context.h(10)),
+                    Text(
+                      'Last: Returned to Store — ${asset.lastReturnedBy}',
+                      style: TextStyle(
+                        color: AppColors.subHeadingColor,
+                        fontSize: context.text(12),
+                        fontWeight: FontWeight.w400,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
                 ],
-              ],
+              ),
             ),
           );
         },

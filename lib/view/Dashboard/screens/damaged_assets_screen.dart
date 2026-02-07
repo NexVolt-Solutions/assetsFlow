@@ -206,172 +206,185 @@ class DamagedAssetCard extends StatelessWidget {
         color: AppColors.damagedCardBg,
         borderRadius: BorderRadius.circular(context.radius(12)),
       ),
+      clipBehavior: Clip.hardEdge,
       child: LayoutBuilder(
         builder: (context, constraints) {
-          return ConstrainedBox(
-            constraints: BoxConstraints(
-              maxWidth: constraints.maxWidth,
-              maxHeight: constraints.maxHeight,
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Container(
-                      width: 44,
-                      height: 44,
-                      decoration: BoxDecoration(
-                        color: AppColors.headingColor,
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: AppColors.damagedIconBorder,
-                          width: 1,
-                        ),
-                      ),
-                      child: Icon(
-                        icon,
-                        color: AppColors.damagedIconBorder,
-                        size: 24,
-                      ),
-                    ),
-                    const Spacer(),
-                    Container(
-                      padding: context.padSym(h: 10, v: 5),
-                      decoration: BoxDecoration(
-                        color: AppColors.damagedPillBg,
-                        borderRadius: BorderRadius.circular(context.radius(16)),
-                      ),
-                      child: Text(
-                        'Damaged',
-                        style: TextStyle(
+          return SizedBox(
+            height: constraints.maxHeight,
+            width: constraints.maxWidth,
+            child: SingleChildScrollView(
+              physics: const ClampingScrollPhysics(),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        width: 44,
+                        height: 44,
+                        decoration: BoxDecoration(
                           color: AppColors.headingColor,
-                          fontSize: context.text(11),
-                          fontWeight: FontWeight.w500,
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: AppColors.damagedIconBorder,
+                            width: 1,
+                          ),
+                        ),
+                        child: Icon(
+                          icon,
+                          color: AppColors.damagedIconBorder,
+                          size: 24,
                         ),
                       ),
+                      const Spacer(),
+                      Container(
+                        padding: context.padSym(h: 10, v: 5),
+                        decoration: BoxDecoration(
+                          color: AppColors.damagedPillBg,
+                          borderRadius: BorderRadius.circular(
+                            context.radius(16),
+                          ),
+                        ),
+                        child: Text(
+                          'Damaged',
+                          style: TextStyle(
+                            color: AppColors.headingColor,
+                            fontSize: context.text(11),
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: context.h(12)),
+                  Text(
+                    asset.name,
+                    style: TextStyle(
+                      color: AppColors.headingColor,
+                      fontSize: context.text(15),
+                      fontWeight: FontWeight.w600,
                     ),
-                  ],
-                ),
-                SizedBox(height: context.h(12)),
-                Text(
-                  asset.name,
-                  style: TextStyle(
-                    color: AppColors.headingColor,
-                    fontSize: context.text(15),
-                    fontWeight: FontWeight.w600,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                SizedBox(height: context.h(4)),
-                Text(
-                  asset.assetId,
-                  style: TextStyle(
-                    color: AppColors.subHeadingColor,
-                    fontSize: context.text(13),
-                    fontWeight: FontWeight.w400,
+                  SizedBox(height: context.h(4)),
+                  Text(
+                    asset.assetId,
+                    style: TextStyle(
+                      color: AppColors.subHeadingColor,
+                      fontSize: context.text(13),
+                      fontWeight: FontWeight.w400,
+                    ),
                   ),
-                ),
-                SizedBox(height: context.h(12)),
-                DetailRow(label: 'Brand', value: asset.brand, labelWidth: 100),
-                SizedBox(height: context.h(4)),
-                DetailRow(label: 'Model', value: asset.model, labelWidth: 100),
-                SizedBox(height: context.h(4)),
-                DetailRow(
-                  label: 'Condition',
-                  value: asset.condition,
-                  labelWidth: 100,
-                  valueColor: AppColors.damagedPillBg,
-                ),
-                if (asset.lastReturnedBy != null &&
-                    asset.lastReturnedBy!.isNotEmpty) ...[
+                  SizedBox(height: context.h(12)),
+                  DetailRow(
+                    label: 'Brand',
+                    value: asset.brand,
+                    labelWidth: 100,
+                  ),
                   SizedBox(height: context.h(4)),
                   DetailRow(
-                    label: 'Last: Returned to Store —',
-                    value: asset.lastReturnedBy!,
-                    labelWidth: 160,
+                    label: 'Model',
+                    value: asset.model,
+                    labelWidth: 100,
                   ),
-                ],
-                SizedBox(height: context.h(16)),
-                Row(
-                  children: [
-                    Expanded(
-                      child: Material(
-                        color: Colors.transparent,
-                        child: InkWell(
-                          onTap: onSendToRepair,
-                          borderRadius: BorderRadius.circular(
-                            context.radius(10),
-                          ),
-                          child: Container(
-                            padding: context.padSym(v: 10),
-                            decoration: BoxDecoration(
-                              color: AppColors.sendToRepairButtonBg.withOpacity(
-                                0.2,
-                              ),
-                              borderRadius: BorderRadius.circular(
-                                context.radius(10),
-                              ),
-                              border: Border.all(
-                                color: AppColors.sendToRepairButtonBorder,
-                                width: 1,
-                              ),
-                            ),
-                            child: Center(
-                              child: Text(
-                                'Send to Repair',
-                                style: TextStyle(
-                                  color: AppColors.sendToRepairButtonBg,
-                                  fontSize: context.text(13),
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                    SizedBox(width: context.w(10)),
-                    Expanded(
-                      child: Material(
-                        color: Colors.transparent,
-                        child: InkWell(
-                          onTap: onRemove,
-                          borderRadius: BorderRadius.circular(
-                            context.radius(10),
-                          ),
-                          child: Container(
-                            padding: context.padSym(v: 10),
-                            decoration: BoxDecoration(
-                              color: AppColors.removeButtonBg.withOpacity(0.2),
-                              borderRadius: BorderRadius.circular(
-                                context.radius(10),
-                              ),
-                              border: Border.all(
-                                color: AppColors.removeButtonBorder,
-                                width: 1,
-                              ),
-                            ),
-                            child: Center(
-                              child: Text(
-                                'Remove',
-                                style: TextStyle(
-                                  color: AppColors.removeButtonBg,
-                                  fontSize: context.text(13),
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
+                  SizedBox(height: context.h(4)),
+                  DetailRow(
+                    label: 'Condition',
+                    value: asset.condition,
+                    labelWidth: 100,
+                    valueColor: AppColors.damagedPillBg,
+                  ),
+                  if (asset.lastReturnedBy != null &&
+                      asset.lastReturnedBy!.isNotEmpty) ...[
+                    SizedBox(height: context.h(4)),
+                    DetailRow(
+                      label: 'Last: Returned to Store —',
+                      value: asset.lastReturnedBy!,
+                      labelWidth: 160,
                     ),
                   ],
-                ),
-              ],
+                  SizedBox(height: context.h(16)),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            onTap: onSendToRepair,
+                            borderRadius: BorderRadius.circular(
+                              context.radius(10),
+                            ),
+                            child: Container(
+                              padding: context.padSym(v: 10),
+                              decoration: BoxDecoration(
+                                color: AppColors.sendToRepairButtonBg
+                                    .withOpacity(0.2),
+                                borderRadius: BorderRadius.circular(
+                                  context.radius(10),
+                                ),
+                                border: Border.all(
+                                  color: AppColors.sendToRepairButtonBorder,
+                                  width: 1,
+                                ),
+                              ),
+                              child: Center(
+                                child: Text(
+                                  'Send to Repair',
+                                  style: TextStyle(
+                                    color: AppColors.sendToRepairButtonBg,
+                                    fontSize: context.text(13),
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                      SizedBox(width: context.w(10)),
+                      Expanded(
+                        child: Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            onTap: onRemove,
+                            borderRadius: BorderRadius.circular(
+                              context.radius(10),
+                            ),
+                            child: Container(
+                              padding: context.padSym(v: 10),
+                              decoration: BoxDecoration(
+                                color: AppColors.removeButtonBg.withOpacity(
+                                  0.2,
+                                ),
+                                borderRadius: BorderRadius.circular(
+                                  context.radius(10),
+                                ),
+                                border: Border.all(
+                                  color: AppColors.removeButtonBorder,
+                                  width: 1,
+                                ),
+                              ),
+                              child: Center(
+                                child: Text(
+                                  'Remove',
+                                  style: TextStyle(
+                                    color: AppColors.removeButtonBg,
+                                    fontSize: context.text(13),
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
           );
         },

@@ -34,4 +34,17 @@ class AppColors {
   static const Color sendToRepairButtonBorder = Color(0xFFD4A83A);
   static const Color removeButtonBg = Color(0xFFD1456F);
   static const Color removeButtonBorder = Color(0xFFB03A5F);
+
+  // Repair Management screen
+  static const Color repairMarkFixedBg = Color(0xFF00C3D0);
+  static const Color repairFixedIconGreen = Color(0xFF4CAF50);
+
+  // Asset Reports screen
+  static const Color reportFilterActiveBg = Color(0xFF3A3D52);
+  static const Color reportFilterInactiveBg = Color(0xFF292C3D);
+  static const Color reportRowStripeBg = Color(0xFF252840);
+  static const Color reportPillAssigned = Color(0xFF6B7280);
+  static const Color reportPillReturned = Color(0xFFFBD44B);
+  static const Color reportPillDamaged = Color(0xFFB03A5F);
+  static const Color reportPillRepair = Color(0xFF5A61A2);
 }
