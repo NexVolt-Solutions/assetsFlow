@@ -2,7 +2,6 @@ import 'package:asset_flow/Core/Constants/app_colors.dart';
 import 'package:asset_flow/Core/Constants/size_extension.dart';
 import 'package:asset_flow/Core/Model/asset_model.dart';
 import 'package:asset_flow/Core/Model/employee_model.dart';
-import 'package:asset_flow/Core/Widget/primary_action_button.dart';
 import 'package:asset_flow/view/Dashboard/screens/assets_screen.dart'
     show kDemoAssets;
 import 'package:asset_flow/view/Dashboard/screens/employee_screen.dart'
@@ -124,126 +123,148 @@ class _AssignAssetScreenContentState extends State<AssignAssetScreenContent> {
               fontWeight: FontWeight.w400,
             ),
           ),
-          SizedBox(height: context.h(28)),
-          _buildNewAssignmentSection(context),
           SizedBox(height: context.h(24)),
-          _buildSelectAssetsSection(context),
-          SizedBox(height: context.h(28)),
-          SizedBox(
+          Container(
             width: double.infinity,
-            child: PrimaryActionButton(
-              label: 'Assign Asset',
-              icon: Icons.add_circle_outline,
-              onTap: _onAssign,
+            padding: context.padAll(24),
+            decoration: BoxDecoration(
+              color: AppColors.assignCardBg,
+              borderRadius: BorderRadius.circular(context.radius(12)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(
+                      Icons.person_outline,
+                      color: AppColors.headingColor,
+                      size: 22,
+                    ),
+                    SizedBox(width: context.w(10)),
+                    Text(
+                      'New Assignment',
+                      style: TextStyle(
+                        color: AppColors.headingColor,
+                        fontSize: context.text(18),
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
+                ),
+                SizedBox(height: context.h(20)),
+                Text(
+                  'Select Employee',
+                  style: TextStyle(
+                    color: AppColors.headingColor,
+                    fontSize: context.text(14),
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                SizedBox(height: context.h(8)),
+                Container(
+                  padding: context.padSym(h: 14, v: 2),
+                  decoration: BoxDecoration(
+                    color: AppColors.cardBackground,
+                    borderRadius: BorderRadius.circular(context.radius(10)),
+                    border: Border.all(
+                      color: AppColors.dropdownBorder,
+                      width: 1,
+                    ),
+                  ),
+                  child: DropdownButtonFormField<int>(
+                    value:
+                        _selectedEmployeeIndex != null &&
+                            _selectedEmployeeIndex! >= 0 &&
+                            _selectedEmployeeIndex! < _employees.length
+                            ? _selectedEmployeeIndex
+                            : null,
+                    hint: Text(
+                      'Choose an employee...',
+                      style: TextStyle(
+                        color: AppColors.subHeadingColor,
+                        fontSize: context.text(14),
+                      ),
+                    ),
+                    items: List.generate(
+                      _employees.length,
+                      (i) => DropdownMenuItem<int>(
+                        value: i,
+                        child: Text(
+                          '${_employees[i].name} · ${_employees[i].code}',
+                          style: TextStyle(
+                            color: AppColors.headingColor,
+                            fontSize: context.text(14),
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ),
+                    onChanged: (v) =>
+                        setState(() => _selectedEmployeeIndex = v),
+                    dropdownColor: AppColors.assignCardBg,
+                    decoration: const InputDecoration(
+                      border: InputBorder.none,
+                      contentPadding: EdgeInsets.zero,
+                      isDense: true,
+                    ),
+                    icon: Icon(
+                      Icons.keyboard_arrow_down,
+                      color: AppColors.headingColor,
+                      size: 24,
+                    ),
+                  ),
+                ),
+                SizedBox(height: context.h(24)),
+                Text(
+                  'Select Assets',
+                  style: TextStyle(
+                    color: AppColors.headingColor,
+                    fontSize: context.text(14),
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                SizedBox(height: context.h(12)),
+                ..._availableAssets.map(
+                  (asset) => _AssignableAssetTile(
+                    asset: asset,
+                    icon: _iconForCategory(asset.category),
+                    isSelected: _selectedAssetIds.contains(asset.id),
+                    onTap: () => _toggleAsset(asset.id),
+                  ),
+                ),
+                SizedBox(height: context.h(24)),
+                SizedBox(
+                  width: double.infinity,
+                  child: Material(
+                    color: AppColors.assignButtonBg,
+                    borderRadius:
+                        BorderRadius.circular(context.radius(10)),
+                    child: InkWell(
+                      onTap: _onAssign,
+                      borderRadius:
+                          BorderRadius.circular(context.radius(10)),
+                      child: Padding(
+                        padding: context.padSym(v: 14),
+                        child: Center(
+                          child: Text(
+                            'Assign Asset',
+                            style: TextStyle(
+                              color: AppColors.headingColor,
+                              fontSize: context.text(16),
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildNewAssignmentSection(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Icon(Icons.person_outline, color: AppColors.headingColor, size: 22),
-            SizedBox(width: context.w(10)),
-            Text(
-              'New Assignment',
-              style: TextStyle(
-                color: AppColors.headingColor,
-                fontSize: context.text(18),
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-          ],
-        ),
-        SizedBox(height: context.h(14)),
-        Text(
-          'Select Employee',
-          style: TextStyle(
-            color: AppColors.subHeadingColor,
-            fontSize: context.text(14),
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-        SizedBox(height: context.h(8)),
-        Container(
-          padding: context.padSym(h: 14, v: 4),
-          decoration: BoxDecoration(
-            color: AppColors.cardBackground,
-            borderRadius: BorderRadius.circular(context.radius(10)),
-          ),
-          child: DropdownButtonFormField<int>(
-            value:
-                _selectedEmployeeIndex != null &&
-                    _selectedEmployeeIndex! >= 0 &&
-                    _selectedEmployeeIndex! < _employees.length
-                ? _selectedEmployeeIndex
-                : null,
-            hint: Text(
-              'Choose an employee...',
-              style: TextStyle(
-                color: AppColors.subHeadingColor,
-                fontSize: context.text(14),
-              ),
-            ),
-            items: List.generate(
-              _employees.length,
-              (i) => DropdownMenuItem<int>(
-                value: i,
-                child: Text(
-                  '${_employees[i].name} · ${_employees[i].code}',
-                  style: TextStyle(
-                    color: AppColors.headingColor,
-                    fontSize: context.text(14),
-                  ),
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ),
-            onChanged: (v) => setState(() => _selectedEmployeeIndex = v),
-            dropdownColor: AppColors.cardBackground,
-            decoration: const InputDecoration(
-              border: InputBorder.none,
-              contentPadding: EdgeInsets.zero,
-              isDense: true,
-            ),
-            icon: Icon(
-              Icons.keyboard_arrow_down,
-              color: AppColors.headingColor,
-              size: 24,
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildSelectAssetsSection(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Select Assets',
-          style: TextStyle(
-            color: AppColors.subHeadingColor,
-            fontSize: context.text(14),
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-        SizedBox(height: context.h(12)),
-        ..._availableAssets.map(
-          (asset) => _AssignableAssetTile(
-            asset: asset,
-            icon: _iconForCategory(asset.category),
-            isSelected: _selectedAssetIds.contains(asset.id),
-            onTap: () => _toggleAsset(asset.id),
-          ),
-        ),
-      ],
     );
   }
 }

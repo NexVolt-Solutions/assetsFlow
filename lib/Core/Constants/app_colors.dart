@@ -20,4 +20,9 @@ class AppColors {
   static const Color statusPillActive = Color(0xFF3A3F57);
   static const Color statusPillOnHold = Color(0xFFE89B3C);
   static const Color listAvatarBg = Color(0xFF2F344F);
+
+  // Assign Asset screen
+  static const Color assignCardBg = Color(0xFF292C3D);
+  static const Color dropdownBorder = Color(0xFF5A61A2);
+  static const Color assignButtonBg = Color(0xFF3A3D52);
 }
