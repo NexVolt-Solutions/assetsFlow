@@ -10,9 +10,9 @@ import 'package:asset_flow/view/Dashboard/widgets/dashboard_overview_content.dar
 import 'package:asset_flow/view/Dashboard/widgets/dashboard_sidebar.dart';
 import 'package:asset_flow/view/Dashboard/screens/damaged_assets_screen.dart';
 import 'package:asset_flow/view/Dashboard/screens/asset_reports_screen.dart';
+import 'package:asset_flow/view/Dashboard/screens/profile_management_screen.dart';
 import 'package:asset_flow/view/Dashboard/screens/repair_management_screen.dart';
 import 'package:asset_flow/view/Dashboard/screens/store_inventory_screen.dart';
-import 'package:asset_flow/view/Dashboard/widgets/nav_placeholder_screen.dart';
 import 'package:flutter/material.dart';
 
 class DashboardScreen extends StatefulWidget {
@@ -56,7 +56,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       case DashboardNavItem.assetReports:
         return const AssetReportsScreenContent();
       case DashboardNavItem.profile:
-        return NavPlaceholderScreen(navItem: DashboardNavItem.profile);
+        return const ProfileManagementScreenContent();
     }
   }
 

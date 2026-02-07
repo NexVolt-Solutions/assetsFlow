@@ -36,7 +36,7 @@ extension DashboardNavItemX on DashboardNavItem {
       case DashboardNavItem.assetReports:
         return 'Asset Reports';
       case DashboardNavItem.profile:
-        return 'Profile';
+        return 'Profile Management';
     }
   }
 }
