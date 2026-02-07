@@ -12,8 +12,6 @@ void main() {
       ],
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
-
-        // home: DietResultScreen(),
         initialRoute: RoutesName.loginScreen,
         onGenerateRoute: Routes.generateRoute,
       ),

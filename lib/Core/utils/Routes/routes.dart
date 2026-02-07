@@ -3,6 +3,7 @@ import 'package:asset_flow/Core/Constants/size_extension.dart';
 import 'package:asset_flow/Core/utils/Routes/routes_name.dart';
 import 'package:asset_flow/view/Auth/login_screen.dart';
 import 'package:asset_flow/view/Auth/signup_screen.dart';
+import 'package:asset_flow/view/Dashboard/dashboard_screen.dart';
 import 'package:flutter/material.dart';
 
 class Routes {
@@ -17,6 +18,11 @@ class Routes {
         return MaterialPageRoute(
           settings: settings,
           builder: (_) => SignUpScreen(),
+        );
+      case RoutesName.dashboardScreen:
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => const DashboardScreen(),
         );
 
       default:

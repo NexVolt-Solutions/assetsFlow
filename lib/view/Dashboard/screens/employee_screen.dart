@@ -1,0 +1,467 @@
+import 'package:asset_flow/Core/Constants/app_colors.dart';
+import 'package:asset_flow/Core/Constants/size_extension.dart';
+import 'package:asset_flow/Core/Model/employee_model.dart';
+import 'package:asset_flow/Core/Widget/detail_row.dart';
+import 'package:asset_flow/Core/Widget/filter_chips.dart';
+import 'package:asset_flow/Core/Widget/primary_action_button.dart';
+import 'package:asset_flow/Core/Widget/search_input_bar.dart';
+import 'package:asset_flow/Core/Widget/section_title.dart';
+import 'package:asset_flow/view/Dashboard/screens/add_employee_dialog.dart';
+import 'package:flutter/material.dart';
+
+enum EmployeeFilter { all, active, resigned, onHold }
+
+extension EmployeeFilterX on EmployeeFilter {
+  String get label {
+    switch (this) {
+      case EmployeeFilter.all:
+        return 'All';
+      case EmployeeFilter.active:
+        return 'Active';
+      case EmployeeFilter.resigned:
+        return 'Resigned';
+      case EmployeeFilter.onHold:
+        return 'On Hold';
+    }
+  }
+}
+
+List<EmployeeItem> get kDemoEmployees => [
+      EmployeeItem(
+        id: 'EMP001',
+        name: 'Aisha Patel',
+        initials: 'AP',
+        code: 'EC-1001',
+        department: 'Engineering',
+        status: 'Active',
+        joiningDate: '2022-03-15',
+        resignationDate: null,
+        assignedAssets: [
+          AssignedAsset(
+            name: 'MacBook Pro 16"',
+            assetId: 'LP-2024-001',
+            status: 'In Use',
+          ),
+          AssignedAsset(
+            name: 'Logitech MX Master',
+            assetId: 'MS-2024-001',
+            status: 'In Use',
+          ),
+          AssignedAsset(
+            name: 'Apple Magic Keyboard',
+            assetId: 'KB-2024-001',
+            status: 'In Use',
+          ),
+        ],
+      ),
+      EmployeeItem(
+        id: 'EMP002',
+        name: 'Sofia Rodriguez',
+        initials: 'SR',
+        code: 'EC-1003',
+        department: 'HR',
+        status: 'Active',
+        joiningDate: '2021-08-20',
+        resignationDate: null,
+        assignedAssets: [
+          AssignedAsset(
+            name: 'Dell Monitor 24"',
+            assetId: 'MN-2024-002',
+            status: 'In Use',
+          ),
+        ],
+      ),
+      EmployeeItem(
+        id: 'EMP003',
+        name: 'James Okafor',
+        initials: 'JO',
+        code: 'EC-1004',
+        department: 'Marketing',
+        status: 'Resigned',
+        joiningDate: '2020-11-10',
+        resignationDate: '2024-01-15',
+        assignedAssets: [],
+      ),
+      EmployeeItem(
+        id: 'EMP004',
+        name: 'James Okafor',
+        initials: 'JO',
+        code: 'EC-1004',
+        department: 'Marketing',
+        status: 'On Hold',
+        joiningDate: '2020-11-10',
+        resignationDate: null,
+        assignedAssets: [
+          AssignedAsset(
+            name: 'HP Laptop',
+            assetId: 'LP-2023-005',
+            status: 'In Use',
+          ),
+        ],
+      ),
+    ];
+
+class EmployeeScreenContent extends StatefulWidget {
+  const EmployeeScreenContent({super.key});
+
+  @override
+  State<EmployeeScreenContent> createState() => _EmployeeScreenContentState();
+}
+
+class _EmployeeScreenContentState extends State<EmployeeScreenContent> {
+  final TextEditingController _searchController = TextEditingController();
+  EmployeeFilter _filter = EmployeeFilter.all;
+  final Set<String> _expandedIds = {'EMP001'};
+  late List<EmployeeItem> _allEmployees = kDemoEmployees;
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  List<EmployeeItem> get _filteredEmployees {
+    final query = _searchController.text.trim().toLowerCase();
+    return _allEmployees.where((e) {
+      final matchFilter = _filter == EmployeeFilter.all ||
+          (_filter == EmployeeFilter.active && e.status == 'Active') ||
+          (_filter == EmployeeFilter.resigned && e.status == 'Resigned') ||
+          (_filter == EmployeeFilter.onHold && e.status == 'On Hold');
+      final matchSearch = query.isEmpty ||
+          e.name.toLowerCase().contains(query) ||
+          e.code.toLowerCase().contains(query) ||
+          e.department.toLowerCase().contains(query);
+      return matchFilter && matchSearch;
+    }).toList();
+  }
+
+  void _toggleExpanded(String id) {
+    setState(() {
+      if (_expandedIds.contains(id)) {
+        _expandedIds.remove(id);
+      } else {
+        _expandedIds.add(id);
+      }
+    });
+  }
+
+  static String _initialsFromName(String name) {
+    final parts = name.trim().split(RegExp(r'\s+'));
+    if (parts.isEmpty) return '?';
+    if (parts.length == 1) return parts[0].isNotEmpty ? parts[0][0].toUpperCase() : '?';
+    return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      padding: EdgeInsets.fromLTRB(
+        context.w(24),
+        0,
+        context.w(24),
+        context.h(24),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Employees',
+                      style: TextStyle(
+                        color: AppColors.headingColor,
+                        fontSize: context.text(24),
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    SizedBox(height: context.h(4)),
+                    Text(
+                      'Manage employee records and asset assignments',
+                      style: TextStyle(
+                        color: AppColors.subHeadingColor,
+                        fontSize: context.text(14),
+                        fontWeight: FontWeight.w400,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              PrimaryActionButton(
+                label: 'Add Employees',
+                icon: Icons.add,
+                onTap: () async {
+                  final result = await showAddEmployeeDialog(context);
+                  if (result != null && mounted) {
+                    setState(() {
+                      _allEmployees = [
+                        ..._allEmployees,
+                        EmployeeItem(
+                          id: result.employeeId,
+                          name: result.fullName,
+                          initials: _initialsFromName(result.fullName),
+                          code: result.employeeCode,
+                          department: result.department,
+                          status: result.status,
+                          joiningDate: result.joiningDate != null
+                              ? '${result.joiningDate!.month.toString().padLeft(2, '0')}/${result.joiningDate!.day.toString().padLeft(2, '0')}/${result.joiningDate!.year}'
+                              : '',
+                          resignationDate: result.resignationDate != null
+                              ? '${result.resignationDate!.month.toString().padLeft(2, '0')}/${result.resignationDate!.day.toString().padLeft(2, '0')}/${result.resignationDate!.year}'
+                              : null,
+                          assignedAssets: [],
+                        ),
+                      ];
+                    });
+                  }
+                },
+              ),
+            ],
+          ),
+          SizedBox(height: context.h(24)),
+          SearchInputBar(
+            controller: _searchController,
+            hintText: 'Search for...',
+            onChanged: (_) => setState(() {}),
+          ),
+          SizedBox(height: context.h(12)),
+          FilterChips<EmployeeFilter>(
+            selected: _filter,
+            values: EmployeeFilter.values,
+            labelBuilder: (f) => f.label,
+            onSelected: (f) => setState(() => _filter = f),
+          ),
+          SizedBox(height: context.h(24)),
+          SectionTitle(title: 'Employees'),
+          SizedBox(height: context.h(12)),
+          ..._filteredEmployees.map(
+            (e) => EmployeeExpandableCard(
+              employee: e,
+              isExpanded: _expandedIds.contains(e.id),
+              onToggle: () => _toggleExpanded(e.id),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class EmployeeExpandableCard extends StatelessWidget {
+  final EmployeeItem employee;
+  final bool isExpanded;
+  final VoidCallback onToggle;
+
+  const EmployeeExpandableCard({
+    super.key,
+    required this.employee,
+    required this.isExpanded,
+    required this.onToggle,
+  });
+
+  static Color _statusColor(String status) {
+    switch (status) {
+      case 'Active':
+        return AppColors.statusPillActive;
+      case 'Resigned':
+        return AppColors.redColor;
+      case 'On Hold':
+        return AppColors.statusPillOnHold;
+      default:
+        return AppColors.statusPillActive;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.only(bottom: context.h(12)),
+      child: Container(
+        decoration: BoxDecoration(
+          color: AppColors.cardBackground,
+          borderRadius: BorderRadius.circular(context.radius(12)),
+        ),
+        child: Column(
+          children: [
+            InkWell(
+              onTap: onToggle,
+              borderRadius: BorderRadius.circular(context.radius(12)),
+              child: Padding(
+                padding: context.padAll(16),
+                child: Row(
+                  children: [
+                    CircleAvatar(
+                      radius: 24,
+                      backgroundColor: AppColors.listAvatarBg,
+                      child: Text(
+                        employee.initials,
+                        style: TextStyle(
+                          color: AppColors.headingColor,
+                          fontSize: context.text(14),
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                    SizedBox(width: context.w(14)),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            employee.name,
+                            style: TextStyle(
+                              color: AppColors.headingColor,
+                              fontSize: context.text(16),
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          SizedBox(height: context.h(4)),
+                          Text(
+                            '${employee.code} · ${employee.department}',
+                            style: TextStyle(
+                              color: AppColors.subHeadingColor,
+                              fontSize: context.text(13),
+                              fontWeight: FontWeight.w400,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Container(
+                      padding: context.padSym(h: 10, v: 6),
+                      decoration: BoxDecoration(
+                        color: _statusColor(employee.status),
+                        borderRadius:
+                            BorderRadius.circular(context.radius(20)),
+                      ),
+                      child: Text(
+                        '${employee.status} · ${employee.assignedAssets.length} assets',
+                        style: TextStyle(
+                          color: AppColors.headingColor,
+                          fontSize: context.text(12),
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                    SizedBox(width: context.w(8)),
+                    Icon(
+                      isExpanded
+                          ? Icons.keyboard_arrow_up
+                          : Icons.keyboard_arrow_down,
+                      color: AppColors.headingColor,
+                      size: 24,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            if (isExpanded) ...[
+              Divider(height: 1, color: AppColors.seconderyColor),
+              Padding(
+                padding: context.padAll(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    DetailRow(label: 'Employee ID', value: employee.id),
+                    SizedBox(height: context.h(8)),
+                    DetailRow(
+                      label: 'Joining Date',
+                      value: employee.joiningDate,
+                    ),
+                    SizedBox(height: context.h(8)),
+                    DetailRow(
+                      label: 'Department',
+                      value: employee.department,
+                    ),
+                    SizedBox(height: context.h(8)),
+                    DetailRow(
+                      label: 'Resignation Date',
+                      value: employee.resignationDate ?? '—',
+                    ),
+                    SizedBox(height: context.h(16)),
+                    Text(
+                      'Assigned Assets',
+                      style: TextStyle(
+                        color: AppColors.headingColor,
+                        fontSize: context.text(14),
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    SizedBox(height: context.h(10)),
+                    if (employee.assignedAssets.isEmpty)
+                      Text(
+                        'No assets assigned',
+                        style: TextStyle(
+                          color: AppColors.subHeadingColor,
+                          fontSize: context.text(13),
+                        ),
+                      )
+                    else
+                      ...employee.assignedAssets.map(
+                        (a) => Padding(
+                          padding: EdgeInsets.only(bottom: context.h(8)),
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.laptop_mac,
+                                color: AppColors.subHeadingColor,
+                                size: 20,
+                              ),
+                              SizedBox(width: context.w(10)),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      a.name,
+                                      style: TextStyle(
+                                        color: AppColors.headingColor,
+                                        fontSize: context.text(14),
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                    Text(
+                                      a.assetId,
+                                      style: TextStyle(
+                                        color: AppColors.subHeadingColor,
+                                        fontSize: context.text(12),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              Container(
+                                padding: context.padSym(h: 8, v: 4),
+                                decoration: BoxDecoration(
+                                  color: AppColors.statusPillActive,
+                                  borderRadius: BorderRadius.circular(
+                                    context.radius(16),
+                                  ),
+                                ),
+                                child: Text(
+                                  a.status,
+                                  style: TextStyle(
+                                    color: AppColors.headingColor,
+                                    fontSize: context.text(11),
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}

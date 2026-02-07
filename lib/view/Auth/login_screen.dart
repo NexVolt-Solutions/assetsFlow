@@ -3,6 +3,7 @@ import 'package:asset_flow/Core/Constants/app_colors.dart';
 import 'package:asset_flow/Core/Constants/size_extension.dart';
 import 'package:asset_flow/Core/Widget/custom_text_field.dart';
 import 'package:asset_flow/Core/Widget/normal_text.dart';
+import 'package:asset_flow/Core/utils/Routes/routes_name.dart';
 import 'package:asset_flow/view/Auth/signup_screen.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
@@ -108,19 +109,22 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
 
                   SizedBox(height: context.h(20)),
-                  Container(
-                    padding: context.padSym(h: 20, v: 12),
-                    decoration: BoxDecoration(
-                      color: AppColors.buttonColor,
-                      borderRadius: BorderRadius.circular(context.radius(8)),
-                    ),
-                    child: Center(
-                      child: Text(
-                        'Sign In',
-                        style: TextStyle(
-                          color: AppColors.headingColor,
-                          fontSize: context.text(20),
-                          fontWeight: FontWeight.w600,
+                  InkWell(
+                    onTap: () => Navigator.pushReplacementNamed(context, RoutesName.dashboardScreen),
+                    child: Container(
+                      padding: context.padSym(h: 20, v: 12),
+                      decoration: BoxDecoration(
+                        color: AppColors.buttonColor,
+                        borderRadius: BorderRadius.circular(context.radius(8)),
+                      ),
+                      child: Center(
+                        child: Text(
+                          'Sign In',
+                          style: TextStyle(
+                            color: AppColors.headingColor,
+                            fontSize: context.text(20),
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                       ),
                     ),
