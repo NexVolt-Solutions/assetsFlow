@@ -3,6 +3,7 @@ import 'package:asset_flow/Core/Constants/app_colors.dart';
 import 'package:asset_flow/Core/Constants/size_extension.dart';
 import 'package:asset_flow/Core/Widget/custom_text_field.dart';
 import 'package:asset_flow/Core/Widget/normal_text.dart';
+import 'package:asset_flow/view/Auth/signup_screen.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -17,7 +18,7 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  bool _obscurePassword = true;
+  final bool _obscurePassword = true;
 
   @override
   void dispose() {
@@ -142,7 +143,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (context) => const SignUpScreen(),
+                                  builder: (context) => SignUpScreen(),
                                 ),
                               );
                             },

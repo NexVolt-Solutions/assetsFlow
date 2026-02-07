@@ -2,7 +2,7 @@ import 'package:asset_flow/Core/Constants/app_colors.dart';
 import 'package:asset_flow/Core/Constants/size_extension.dart';
 import 'package:asset_flow/Core/utils/Routes/routes_name.dart';
 import 'package:asset_flow/view/Auth/login_screen.dart';
-import 'package:asset_flow/view/Auth/sign_in_screen.dart';
+import 'package:asset_flow/view/Auth/signup_screen.dart';
 import 'package:flutter/material.dart';
 
 class Routes {
@@ -13,10 +13,10 @@ class Routes {
           settings: settings,
           builder: (_) => LoginScreen(),
         );
-      case RoutesName.signInScreen:
+      case RoutesName.SignUpScreen:
         return MaterialPageRoute(
           settings: settings,
-          builder: (_) => SignInScreen(),
+          builder: (_) => SignUpScreen(),
         );
 
       default:

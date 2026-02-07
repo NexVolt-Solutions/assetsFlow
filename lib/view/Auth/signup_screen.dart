@@ -3,17 +3,18 @@ import 'package:asset_flow/Core/Constants/app_colors.dart';
 import 'package:asset_flow/Core/Constants/size_extension.dart';
 import 'package:asset_flow/Core/Widget/custom_text_field.dart';
 import 'package:asset_flow/Core/Widget/normal_text.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 
-class SignInScreen extends StatefulWidget {
-  const SignInScreen({super.key});
+class SignUpScreen extends StatefulWidget {
+  const SignUpScreen({super.key});
 
   @override
-  State<SignInScreen> createState() => _SignInScreenState();
+  State<SignUpScreen> createState() => _SignUpScreenState();
 }
 
-class _SignInScreenState extends State<SignInScreen> {
+class _SignUpScreenState extends State<SignUpScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -145,7 +146,7 @@ class _SignInScreenState extends State<SignInScreen> {
                       ),
                     ),
                   ),
-                   SizedBox(height: context.h(20)),
+                  SizedBox(height: context.h(20)),
                   Text.rich(
                     TextSpan(
                       text: "I Already Have an Account",
