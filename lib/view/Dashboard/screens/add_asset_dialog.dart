@@ -120,10 +120,12 @@ class _AddAssetDialogState extends State<AddAssetDialog> {
   bool get _isEditMode => widget.initialAsset != null;
 
   List<String> get _brands => _categoryToBrands[_category] ?? [];
-  List<String> get _versions => (_brand != null && _brandToVersions.containsKey(_brand))
+  List<String> get _versions =>
+      (_brand != null && _brandToVersions.containsKey(_brand))
       ? _brandToVersions[_brand]!
       : [];
-  List<String> get _models => (_brand != null && _brandToModels.containsKey(_brand))
+  List<String> get _models =>
+      (_brand != null && _brandToModels.containsKey(_brand))
       ? _brandToModels[_brand]!
       : [];
 
@@ -134,11 +136,19 @@ class _AddAssetDialogState extends State<AddAssetDialog> {
     if (existing != null) {
       _assetNameController = TextEditingController(text: existing.name);
       _assetCodeController = TextEditingController(text: existing.assetId);
-      _category = _categories.contains(existing.category) ? existing.category : _categories.first;
-      _brand = _brands.contains(existing.brand) ? existing.brand : (_brands.isNotEmpty ? _brands.first : null);
+      _category = _categories.contains(existing.category)
+          ? existing.category
+          : _categories.first;
+      _brand = _brands.contains(existing.brand)
+          ? existing.brand
+          : (_brands.isNotEmpty ? _brands.first : null);
       _version = _versions.isNotEmpty ? _versions.first : null;
-      _model = _models.contains(existing.model) ? existing.model : (_models.isNotEmpty ? _models.first : null);
-      _condition = _conditions.contains(existing.condition) ? existing.condition : _conditions.first;
+      _model = _models.contains(existing.model)
+          ? existing.model
+          : (_models.isNotEmpty ? _models.first : null);
+      _condition = _conditions.contains(existing.condition)
+          ? existing.condition
+          : _conditions.first;
     } else {
       _assetNameController = TextEditingController(text: 'MACBOOK PRO');
       _assetCodeController = TextEditingController(text: 'EMP009');
@@ -175,15 +185,17 @@ class _AddAssetDialogState extends State<AddAssetDialog> {
 
   void _onSave() {
     if (_formKey.currentState?.validate() ?? false) {
-      Navigator.of(context).pop(AddAssetDialogResult(
-        assetName: _assetNameController.text.trim(),
-        assetCode: _assetCodeController.text.trim(),
-        category: _category,
-        brand: _brand ?? '',
-        version: _version ?? '',
-        model: _model ?? '',
-        condition: _condition,
-      ));
+      Navigator.of(context).pop(
+        AddAssetDialogResult(
+          assetName: _assetNameController.text.trim(),
+          assetCode: _assetCodeController.text.trim(),
+          category: _category,
+          brand: _brand ?? '',
+          version: _version ?? '',
+          model: _model ?? '',
+          condition: _condition,
+        ),
+      );
     }
   }
 
@@ -210,7 +222,10 @@ class _AddAssetDialogState extends State<AddAssetDialog> {
               children: [
                 _buildHeader(context),
                 SizedBox(height: context.h(24)),
-                if (isWide) _buildTwoColumnRow(context) else _buildSingleColumn(context),
+                if (isWide)
+                  _buildTwoColumnRow(context)
+                else
+                  _buildSingleColumn(context),
                 SizedBox(height: context.h(28)),
                 _buildSaveButton(context),
               ],
@@ -253,15 +268,38 @@ class _AddAssetDialogState extends State<AddAssetDialog> {
         Expanded(
           child: Column(
             children: [
-              _buildLabeledField(context, 'Asset Name', _assetNameController, 'MACBOOK PRO',
-                  validator: (v) => v == null || v.trim().isEmpty ? 'Required' : null),
+              _buildLabeledField(
+                context,
+                'Asset Name',
+                _assetNameController,
+                'MACBOOK PRO',
+                validator: (v) =>
+                    v == null || v.trim().isEmpty ? 'Required' : null,
+              ),
               SizedBox(height: context.h(16)),
-              _buildDropdown(context, 'Category', _category, _categories, _onCategoryChanged),
+              _buildDropdown(
+                context,
+                'Category',
+                _category,
+                _categories,
+                _onCategoryChanged,
+              ),
               SizedBox(height: context.h(16)),
-              _buildDropdown(context, 'Model', _model, _models, (v) => setState(() => _model = v)),
+              _buildDropdown(
+                context,
+                'Model',
+                _model,
+                _models,
+                (v) => setState(() => _model = v),
+              ),
               SizedBox(height: context.h(16)),
-              _buildDropdown(context, 'Condition', _condition, _conditions,
-                  (v) => setState(() => _condition = v ?? _conditions.first)),
+              _buildDropdown(
+                context,
+                'Condition',
+                _condition,
+                _conditions,
+                (v) => setState(() => _condition = v ?? _conditions.first),
+              ),
             ],
           ),
         ),
@@ -269,12 +307,30 @@ class _AddAssetDialogState extends State<AddAssetDialog> {
         Expanded(
           child: Column(
             children: [
-              _buildLabeledField(context, 'Asset Code', _assetCodeController, 'EMP009',
-                  validator: (v) => v == null || v.trim().isEmpty ? 'Required' : null),
+              _buildLabeledField(
+                context,
+                'Asset Code',
+                _assetCodeController,
+                'EMP009',
+                validator: (v) =>
+                    v == null || v.trim().isEmpty ? 'Required' : null,
+              ),
               SizedBox(height: context.h(16)),
-              _buildDropdown(context, 'Brand', _brand, _brands, _onBrandChanged),
+              _buildDropdown(
+                context,
+                'Brand',
+                _brand,
+                _brands,
+                _onBrandChanged,
+              ),
               SizedBox(height: context.h(16)),
-              _buildDropdown(context, 'Version', _version, _versions, (v) => setState(() => _version = v)),
+              _buildDropdown(
+                context,
+                'Version',
+                _version,
+                _versions,
+                (v) => setState(() => _version = v),
+              ),
             ],
           ),
         ),
@@ -286,22 +342,55 @@ class _AddAssetDialogState extends State<AddAssetDialog> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        _buildLabeledField(context, 'Asset Name', _assetNameController, 'MACBOOK PRO',
-            validator: (v) => v == null || v.trim().isEmpty ? 'Required' : null),
+        _buildLabeledField(
+          context,
+          'Asset Name',
+          _assetNameController,
+          'MACBOOK PRO',
+          validator: (v) => v == null || v.trim().isEmpty ? 'Required' : null,
+        ),
         SizedBox(height: context.h(16)),
-        _buildLabeledField(context, 'Asset Code', _assetCodeController, 'EMP009',
-            validator: (v) => v == null || v.trim().isEmpty ? 'Required' : null),
+        _buildLabeledField(
+          context,
+          'Asset Code',
+          _assetCodeController,
+          'EMP009',
+          validator: (v) => v == null || v.trim().isEmpty ? 'Required' : null,
+        ),
         SizedBox(height: context.h(16)),
-        _buildDropdown(context, 'Category', _category, _categories, _onCategoryChanged),
+        _buildDropdown(
+          context,
+          'Category',
+          _category,
+          _categories,
+          _onCategoryChanged,
+        ),
         SizedBox(height: context.h(16)),
         _buildDropdown(context, 'Brand', _brand, _brands, _onBrandChanged),
         SizedBox(height: context.h(16)),
-        _buildDropdown(context, 'Version', _version, _versions, (v) => setState(() => _version = v)),
+        _buildDropdown(
+          context,
+          'Version',
+          _version,
+          _versions,
+          (v) => setState(() => _version = v),
+        ),
         SizedBox(height: context.h(16)),
-        _buildDropdown(context, 'Model', _model, _models, (v) => setState(() => _model = v)),
+        _buildDropdown(
+          context,
+          'Model',
+          _model,
+          _models,
+          (v) => setState(() => _model = v),
+        ),
         SizedBox(height: context.h(16)),
-        _buildDropdown(context, 'Condition', _condition, _conditions,
-            (v) => setState(() => _condition = v ?? _conditions.first)),
+        _buildDropdown(
+          context,
+          'Condition',
+          _condition,
+          _conditions,
+          (v) => setState(() => _condition = v ?? _conditions.first),
+        ),
       ],
     );
   }
@@ -325,7 +414,12 @@ class _AddAssetDialogState extends State<AddAssetDialog> {
           ),
         ),
         SizedBox(height: context.h(8)),
-        _styledTextField(context, controller: controller, hint: hint, validator: validator),
+        _styledTextField(
+          context,
+          controller: controller,
+          hint: hint,
+          validator: validator,
+        ),
       ],
     );
   }
@@ -354,7 +448,9 @@ class _AddAssetDialogState extends State<AddAssetDialog> {
         SizedBox(height: context.h(8)),
         _styledDropdown(
           value: effectiveValue,
-          items: items.map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
+          items: items
+              .map((e) => DropdownMenuItem(value: e, child: Text(e)))
+              .toList(),
           onChanged: (items.isEmpty) ? null : onChanged,
         ),
       ],
