@@ -56,15 +56,30 @@ class _SignInScreenState extends State<SignInScreen> {
                     titleWeight: FontWeight.w600,
                     titleColor: AppColors.headingColor,
                     sizeBoxheight: context.h(12),
-                    subText: 'Sign in to your account',
+                    subText: 'Sign up to your account',
                     subSize: context.text(16),
                     subWeight: FontWeight.w500,
                     subColor: AppColors.subHeadingColor,
                   ),
                   SizedBox(height: context.h(20)),
                   CustomTextField(
+                    labelText: "Name",
+                    hintText: "Enter name",
+                    keyboardType: TextInputType.emailAddress,
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return "name is required";
+                      }
+                      if (!value.contains("@")) {
+                        return "Enter valid name";
+                      }
+                      return null;
+                    },
+                  ),
+                  SizedBox(height: context.h(20)),
+                  CustomTextField(
                     labelText: "Email",
-                    hintText: "admin@assetflow.com",
+                    hintText: "Enter email",
                     keyboardType: TextInputType.emailAddress,
                     validator: (value) {
                       if (value == null || value.isEmpty) {
@@ -80,6 +95,24 @@ class _SignInScreenState extends State<SignInScreen> {
                   CustomTextField(
                     labelText: "Password",
                     hintText: "Enter password",
+                    keyboardType: TextInputType.text,
+                    obscureText: true,
+                    suffixIcon: Icon(
+                      Icons.visibility,
+                      color: AppColors.contColor,
+                    ),
+                    validator: (value) {
+                      if (value == null || value.length < 6) {
+                        return "Password must be 6 characters";
+                      }
+                      return null;
+                    },
+                  ),
+
+                  SizedBox(height: context.h(20)),
+                  CustomTextField(
+                    labelText: "Confirm Password",
+                    hintText: "Enter confirm password",
                     keyboardType: TextInputType.text,
                     obscureText: true,
                     suffixIcon: Icon(
@@ -112,6 +145,32 @@ class _SignInScreenState extends State<SignInScreen> {
                       ),
                     ),
                   ),
+                   SizedBox(height: context.h(20)),
+                  Text.rich(
+                    TextSpan(
+                      text: "I Already Have an Account",
+                      style: const TextStyle(color: Colors.grey, fontSize: 14),
+                      children: [
+                        TextSpan(
+                          text: "Sign In",
+                          style: const TextStyle(
+                            color: AppColors.headingColor,
+                            fontWeight: FontWeight.w600,
+                          ),
+                          recognizer: TapGestureRecognizer()
+                            ..onTap = () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => const SignUpScreen(),
+                                ),
+                              );
+                            },
+                        ),
+                      ],
+                    ),
+                  ),
+                  SizedBox(height: context.h(18)),
                 ],
               ),
             ),
