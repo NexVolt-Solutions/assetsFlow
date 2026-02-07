@@ -9,6 +9,7 @@ import 'package:asset_flow/view/Dashboard/widgets/dashboard_app_bar.dart';
 import 'package:asset_flow/view/Dashboard/widgets/dashboard_overview_content.dart';
 import 'package:asset_flow/view/Dashboard/widgets/dashboard_sidebar.dart';
 import 'package:asset_flow/view/Dashboard/screens/damaged_assets_screen.dart';
+import 'package:asset_flow/view/Dashboard/screens/asset_reports_screen.dart';
 import 'package:asset_flow/view/Dashboard/screens/repair_management_screen.dart';
 import 'package:asset_flow/view/Dashboard/screens/store_inventory_screen.dart';
 import 'package:asset_flow/view/Dashboard/widgets/nav_placeholder_screen.dart';
@@ -53,7 +54,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       case DashboardNavItem.repairManagement:
         return const RepairManagementScreenContent();
       case DashboardNavItem.assetReports:
-        return NavPlaceholderScreen(navItem: DashboardNavItem.assetReports);
+        return const AssetReportsScreenContent();
       case DashboardNavItem.profile:
         return NavPlaceholderScreen(navItem: DashboardNavItem.profile);
     }
