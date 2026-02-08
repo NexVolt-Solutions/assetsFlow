@@ -23,8 +23,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
   final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
-  bool _obscurePassword = true;
-  bool _obscureConfirmPassword = true;
 
   @override
   void dispose() {
@@ -38,7 +36,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
   Future<void> _onSubmit() async {
     final vm = context.read<SignupScreenViewModel>();
     vm.clearError();
-    if (!_formKey.currentState!.validate()) return;
 
     final success = await vm.signUp(
       _emailController.text,
@@ -48,42 +45,20 @@ class _SignUpScreenState extends State<SignUpScreen> {
     );
     if (!mounted) return;
     if (success) {
-      _hideTopBanner(context);
-      Navigator.pushReplacementNamed(context, RoutesName.dashboardScreen);
+      Navigator.pushReplacementNamed(context, RoutesName.loginScreen);
     } else {
-      _showTopSnackBar(context, vm.errorMessage ?? 'Something went wrong', isError: true);
+      _showErrorSnackBar(context, vm.errorMessage ?? 'Something went wrong');
     }
   }
 
-  void _hideTopBanner(BuildContext context) {
-    try {
-      ScaffoldMessenger.of(context).hideCurrentMaterialBanner();
-    } catch (_) {}
-  }
-
-  void _showTopSnackBar(BuildContext context, String message,
-      {bool isError = true}) {
-    _hideTopBanner(context);
-    ScaffoldMessenger.of(context).showMaterialBanner(
-      MaterialBanner(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        backgroundColor: isError ? Colors.red.shade700 : Colors.green.shade700,
-        content: Text(
-          message,
-          style: const TextStyle(color: Colors.white, fontSize: 14),
-        ),
-        leading: Icon(
-          isError ? Icons.error_outline : Icons.check_circle_outline,
-          color: Colors.white,
-        ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              ScaffoldMessenger.of(context).hideCurrentMaterialBanner();
-            },
-            child: const Text('DISMISS', style: TextStyle(color: Colors.white)),
-          ),
-        ],
+  void _showErrorSnackBar(BuildContext context, String message) {
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.red.shade700,
+        duration: const Duration(seconds: 4),
+        behavior: SnackBarBehavior.floating,
       ),
     );
   }
@@ -143,15 +118,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
                         labelText: 'Email',
                         hintText: 'Enter email',
                         keyboardType: TextInputType.emailAddress,
-                        validator: (v) {
-                          if (v == null || v.trim().isEmpty) {
-                            return 'Email is required';
-                          }
-                          if (!v.contains('@') || !v.contains('.')) {
-                            return 'Enter a valid email';
-                          }
-                          return null;
-                        },
                       ),
                       SizedBox(height: context.h(20)),
                       CustomTextField(
@@ -159,66 +125,47 @@ class _SignUpScreenState extends State<SignUpScreen> {
                         labelText: 'Username',
                         hintText: 'Enter username',
                         keyboardType: TextInputType.text,
-                        validator: (v) {
-                          if (v == null || v.trim().isEmpty) {
-                            return 'Username is required';
-                          }
-                          return null;
+                      ),
+                      SizedBox(height: context.h(20)),
+                      Consumer<SignupScreenViewModel>(
+                        builder: (context, vm, child) {
+                          return CustomTextField(
+                            controller: _passwordController,
+                            labelText: 'Password',
+                            hintText: 'Enter password',
+                            keyboardType: TextInputType.visiblePassword,
+                            obscureText: vm.obscurePassword,
+                            suffixIcon: IconButton(
+                              icon: Icon(
+                                vm.obscurePassword
+                                    ? Icons.visibility
+                                    : Icons.visibility_off,
+                                color: AppColors.headingColor,
+                              ),
+                              onPressed: vm.toggleObscurePassword,
+                            ),
+                          );
                         },
                       ),
                       SizedBox(height: context.h(20)),
-                      CustomTextField(
-                        controller: _passwordController,
-                        labelText: 'Password',
-                        hintText: 'Enter password',
-                        keyboardType: TextInputType.visiblePassword,
-                        obscureText: _obscurePassword,
-                        suffixIcon: IconButton(
-                          icon: Icon(
-                            _obscurePassword
-                                ? Icons.visibility
-                                : Icons.visibility_off,
-                            color: AppColors.contColor,
-                          ),
-                          onPressed: () {
-                            setState(() => _obscurePassword = !_obscurePassword);
-                          },
-                        ),
-                        validator: (v) {
-                          if (v == null || v.length < 6) {
-                            return 'Password must be at least 6 characters';
-                          }
-                          return null;
-                        },
-                      ),
-                      SizedBox(height: context.h(20)),
-                      CustomTextField(
-                        controller: _confirmPasswordController,
-                        labelText: 'Confirm Password',
-                        hintText: 'Enter confirm password',
-                        keyboardType: TextInputType.visiblePassword,
-                        obscureText: _obscureConfirmPassword,
-                        suffixIcon: IconButton(
-                          icon: Icon(
-                            _obscureConfirmPassword
-                                ? Icons.visibility
-                                : Icons.visibility_off,
-                            color: AppColors.contColor,
-                          ),
-                          onPressed: () {
-                            setState(() =>
-                                _obscureConfirmPassword =
-                                    !_obscureConfirmPassword);
-                          },
-                        ),
-                        validator: (v) {
-                          if (v == null || v.length < 6) {
-                            return 'Password must be at least 6 characters';
-                          }
-                          if (v != _passwordController.text) {
-                            return 'Passwords do not match';
-                          }
-                          return null;
+                      Consumer<SignupScreenViewModel>(
+                        builder: (context, vm, child) {
+                          return CustomTextField(
+                            controller: _confirmPasswordController,
+                            labelText: 'Confirm Password',
+                            hintText: 'Enter confirm password',
+                            keyboardType: TextInputType.visiblePassword,
+                            obscureText: vm.obscureConfirmPassword,
+                            suffixIcon: IconButton(
+                              icon: Icon(
+                                vm.obscureConfirmPassword
+                                    ? Icons.visibility
+                                    : Icons.visibility_off,
+                                color: AppColors.headingColor,
+                              ),
+                              onPressed: vm.toggleObscureConfirmPassword,
+                            ),
+                          );
                         },
                       ),
                       SizedBox(height: context.h(20)),
@@ -232,8 +179,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                 color: vm.isLoading
                                     ? AppColors.buttonColor.withOpacity(0.6)
                                     : AppColors.buttonColor,
-                                borderRadius:
-                                    BorderRadius.circular(context.radius(8)),
+                                borderRadius: BorderRadius.circular(
+                                  context.radius(8),
+                                ),
                               ),
                               child: Center(
                                 child: vm.isLoading

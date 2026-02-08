@@ -1,57 +1,120 @@
 import 'package:asset_flow/Core/Constants/app_colors.dart';
 import 'package:asset_flow/Core/Constants/size_extension.dart';
+import 'package:asset_flow/Core/Model/dashboard_model.dart';
 import 'package:asset_flow/Core/Widget/section_title.dart';
 import 'package:asset_flow/Core/Widget/stat_card.dart';
+import 'package:asset_flow/viewModel/dashboard_view_model.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
-class DashboardOverviewContent extends StatelessWidget {
+class DashboardOverviewContent extends StatefulWidget {
   const DashboardOverviewContent({super.key});
 
   @override
+  State<DashboardOverviewContent> createState() => _DashboardOverviewContentState();
+}
+
+class _DashboardOverviewContentState extends State<DashboardOverviewContent> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<DashboardViewModel>().fetchDashboard();
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      padding: EdgeInsets.fromLTRB(
-        context.w(24),
-        0,
-        context.w(24),
-        context.h(24),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Overview of your asset management system',
-            style: TextStyle(
-              color: AppColors.subHeadingColor,
-              fontSize: context.text(14),
-              fontWeight: FontWeight.w400,
+    return Consumer<DashboardViewModel>(
+      builder: (context, vm, child) {
+        if (vm.isLoading && vm.data == null) {
+          return Center(
+            child: Padding(
+              padding: EdgeInsets.all(context.h(48)),
+              child: const CircularProgressIndicator(),
             ),
+          );
+        }
+        if (vm.errorMessage != null && vm.data == null) {
+          return Center(
+            child: Padding(
+              padding: EdgeInsets.all(context.h(24)),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    vm.errorMessage!,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: AppColors.subHeadingColor,
+                      fontSize: context.text(14),
+                    ),
+                  ),
+                  SizedBox(height: context.h(16)),
+                  TextButton.icon(
+                    onPressed: vm.fetchDashboard,
+                    icon: const Icon(Icons.refresh),
+                    label: const Text('Retry'),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
+        final data = vm.data;
+        return SingleChildScrollView(
+          padding: EdgeInsets.fromLTRB(
+            context.w(24),
+            0,
+            context.w(24),
+            context.h(24),
           ),
-          SizedBox(height: context.h(28)),
-          SectionTitle(title: 'Employees'),
-          SizedBox(height: context.h(12)),
-          _EmployeeCards(),
-          SizedBox(height: context.h(28)),
-          SectionTitle(title: 'Assets'),
-          SizedBox(height: context.h(12)),
-          _AssetCards(),
-          SizedBox(height: context.h(28)),
-          SectionTitle(title: 'Recent Employees'),
-          SizedBox(height: context.h(12)),
-          _RecentEmployees(),
-          SizedBox(height: context.h(28)),
-          SectionTitle(title: 'Recent Assets'),
-          SizedBox(height: context.h(12)),
-          _RecentAssets(),
-        ],
-      ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Overview of your asset management system',
+                style: TextStyle(
+                  color: AppColors.subHeadingColor,
+                  fontSize: context.text(14),
+                  fontWeight: FontWeight.w400,
+                ),
+              ),
+              SizedBox(height: context.h(28)),
+              SectionTitle(title: 'Employees'),
+              SizedBox(height: context.h(12)),
+              _EmployeeCards(data: data),
+              SizedBox(height: context.h(28)),
+              SectionTitle(title: 'Assets'),
+              SizedBox(height: context.h(12)),
+              _AssetCards(data: data),
+              SizedBox(height: context.h(28)),
+              SectionTitle(title: 'Recent Employees'),
+              SizedBox(height: context.h(12)),
+              _RecentEmployeesList(data: data),
+              SizedBox(height: context.h(28)),
+              SectionTitle(title: 'Recent Assets'),
+              SizedBox(height: context.h(12)),
+              _RecentAssetsList(data: data),
+            ],
+          ),
+        );
+      },
     );
   }
 }
 
 class _EmployeeCards extends StatelessWidget {
+  final DashboardData? data;
+
+  const _EmployeeCards({this.data});
+
   @override
   Widget build(BuildContext context) {
+    final total = data?.totalEmployees ?? 0;
+    final active = data?.activeEmployees ?? 0;
+    final resigned = data?.resignedEmployees ?? 0;
+    final onHold = data?.onHoldEmployees ?? 0;
     return LayoutBuilder(
       builder: (context, constraints) {
         final crossAxisCount = constraints.maxWidth > 700
@@ -66,18 +129,18 @@ class _EmployeeCards extends StatelessWidget {
           childAspectRatio: 2.5,
           children: [
             StatCard(
-              value: '8',
+              value: '$total',
               label: 'Total Employee',
               icon: Icons.people_outline,
             ),
             StatCard(
-              value: '5',
+              value: '$active',
               label: 'Active',
               icon: Icons.check_circle_outline,
             ),
-            StatCard(value: '2', label: 'Resigned', icon: Icons.refresh),
+            StatCard(value: '$resigned', label: 'Resigned', icon: Icons.refresh),
             StatCard(
-              value: '1',
+              value: '$onHold',
               label: 'On Hold',
               icon: Icons.indeterminate_check_box_outlined,
             ),
@@ -89,8 +152,17 @@ class _EmployeeCards extends StatelessWidget {
 }
 
 class _AssetCards extends StatelessWidget {
+  final DashboardData? data;
+
+  const _AssetCards({this.data});
+
   @override
   Widget build(BuildContext context) {
+    final total = data?.totalAssets ?? 0;
+    final inUse = data?.assetsInUse ?? 0;
+    final inStore = data?.assetsInStore ?? 0;
+    final damaged = data?.damagedAssets ?? 0;
+    final underRepair = data?.assetsUnderRepair ?? 0;
     return LayoutBuilder(
       builder: (context, constraints) {
         final crossAxisCount = constraints.maxWidth > 700
@@ -105,23 +177,23 @@ class _AssetCards extends StatelessWidget {
           childAspectRatio: 2.5,
           children: [
             StatCard(
-              value: '18',
+              value: '$total',
               label: 'Total Assets',
               icon: Icons.description_outlined,
             ),
-            StatCard(value: '12', label: 'In Use', icon: Icons.computer),
+            StatCard(value: '$inUse', label: 'In Use', icon: Icons.computer),
             StatCard(
-              value: '3',
+              value: '$inStore',
               label: 'In Store',
               icon: Icons.storefront_outlined,
             ),
             StatCard(
-              value: '2',
+              value: '$damaged',
               label: 'Damaged',
               icon: Icons.warning_amber_outlined,
             ),
             StatCard(
-              value: '1',
+              value: '$underRepair',
               label: 'Under Repair',
               icon: Icons.build_outlined,
             ),
@@ -132,15 +204,43 @@ class _AssetCards extends StatelessWidget {
   }
 }
 
-class _RecentEmployees extends StatelessWidget {
-  static const _items = [
-    ('Aisha Patel', 'Engineering', 'AP', 'Active'),
-    ('Marcus Johnson', 'Design', 'MJ', 'Active'),
-    ('James Wilson', 'Operations', 'JW', 'Resigned'),
-  ];
+String _initialsFromName(String name) {
+  final parts = name.trim().split(RegExp(r'\s+'));
+  if (parts.isEmpty) return '?';
+  if (parts.length == 1) {
+    final s = parts[0];
+    return s.length >= 2 ? s.substring(0, 2).toUpperCase() : s.toUpperCase();
+  }
+  return (parts[0].isNotEmpty ? parts[0][0] : '') +
+      (parts[1].isNotEmpty ? parts[1][0] : '');
+}
+
+class _RecentEmployeesList extends StatelessWidget {
+  final DashboardData? data;
+
+  const _RecentEmployeesList({this.data});
 
   @override
   Widget build(BuildContext context) {
+    final items = data?.recentEmployees ?? [];
+    if (items.isEmpty) {
+      return Container(
+        padding: context.padSym(h: 16, v: 24),
+        decoration: BoxDecoration(
+          color: AppColors.cardBackground,
+          borderRadius: BorderRadius.circular(context.radius(12)),
+        ),
+        child: Center(
+          child: Text(
+            'No recent employees',
+            style: TextStyle(
+              color: AppColors.subHeadingColor,
+              fontSize: context.text(14),
+            ),
+          ),
+        ),
+      );
+    }
     return Container(
       decoration: BoxDecoration(
         color: AppColors.cardBackground,
@@ -148,13 +248,13 @@ class _RecentEmployees extends StatelessWidget {
       ),
       child: Column(
         children: [
-          for (int i = 0; i < _items.length; i++) ...[
+          for (int i = 0; i < items.length; i++) ...[
             if (i > 0) Divider(height: 1, color: AppColors.seconderyColor),
             _RecentEmployeeTile(
-              name: _items[i].$1,
-              role: _items[i].$2,
-              initials: _items[i].$3,
-              status: _items[i].$4,
+              name: items[i].name,
+              role: items[i].department,
+              initials: _initialsFromName(items[i].name),
+              status: items[i].status,
             ),
           ],
         ],
@@ -178,7 +278,7 @@ class _RecentEmployeeTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isResigned = status == 'Resigned';
+    final isResigned = status.toLowerCase().contains('resign');
     return Padding(
       padding: context.padSym(h: 16, v: 14),
       child: Row(
@@ -243,15 +343,32 @@ class _RecentEmployeeTile extends StatelessWidget {
   }
 }
 
-class _RecentAssets extends StatelessWidget {
-  static const _items = [
-    ('MacBook Pro 16', 'LP-2024-001', Icons.laptop_mac),
-    ('Logitech MX Master', 'MS-2024-002', Icons.mouse),
-    ('Apple Magic Keyboard', 'KB-2024-003', Icons.keyboard),
-  ];
+class _RecentAssetsList extends StatelessWidget {
+  final DashboardData? data;
+
+  const _RecentAssetsList({this.data});
 
   @override
   Widget build(BuildContext context) {
+    final items = data?.recentAssets ?? [];
+    if (items.isEmpty) {
+      return Container(
+        padding: context.padSym(h: 16, v: 24),
+        decoration: BoxDecoration(
+          color: AppColors.cardBackground,
+          borderRadius: BorderRadius.circular(context.radius(12)),
+        ),
+        child: Center(
+          child: Text(
+            'No recent assets',
+            style: TextStyle(
+              color: AppColors.subHeadingColor,
+              fontSize: context.text(14),
+            ),
+          ),
+        ),
+      );
+    }
     return Container(
       decoration: BoxDecoration(
         color: AppColors.cardBackground,
@@ -259,12 +376,12 @@ class _RecentAssets extends StatelessWidget {
       ),
       child: Column(
         children: [
-          for (int i = 0; i < _items.length; i++) ...[
+          for (int i = 0; i < items.length; i++) ...[
             if (i > 0) Divider(height: 1, color: AppColors.seconderyColor),
             _RecentAssetTile(
-              name: _items[i].$1,
-              assetId: _items[i].$2,
-              icon: _items[i].$3,
+              name: items[i].name,
+              subText: items[i].category,
+              status: items[i].currentStatus,
             ),
           ],
         ],
@@ -275,13 +392,13 @@ class _RecentAssets extends StatelessWidget {
 
 class _RecentAssetTile extends StatelessWidget {
   final String name;
-  final String assetId;
-  final IconData icon;
+  final String subText;
+  final String status;
 
   const _RecentAssetTile({
     required this.name,
-    required this.assetId,
-    required this.icon,
+    required this.subText,
+    required this.status,
   });
 
   @override
@@ -293,7 +410,8 @@ class _RecentAssetTile extends StatelessWidget {
           CircleAvatar(
             radius: 22,
             backgroundColor: AppColors.listAvatarBg,
-            child: Icon(icon, color: AppColors.headingColor, size: 24),
+            child: Icon(Icons.description_outlined,
+                color: AppColors.headingColor, size: 24),
           ),
           SizedBox(width: context.w(14)),
           Expanded(
@@ -310,7 +428,7 @@ class _RecentAssetTile extends StatelessWidget {
                 ),
                 SizedBox(height: context.h(2)),
                 Text(
-                  assetId,
+                  subText,
                   style: TextStyle(
                     color: AppColors.subHeadingColor,
                     fontSize: context.text(13),
@@ -327,7 +445,7 @@ class _RecentAssetTile extends StatelessWidget {
               borderRadius: BorderRadius.circular(context.radius(20)),
             ),
             child: Text(
-              'In Use',
+              status,
               style: TextStyle(
                 color: AppColors.headingColor,
                 fontSize: context.text(12),

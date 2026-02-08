@@ -1,6 +1,8 @@
 import 'package:asset_flow/Core/Constants/app_colors.dart';
 import 'package:asset_flow/Core/Constants/size_extension.dart';
+import 'package:asset_flow/viewModel/profile_management_screen_view_model.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 class ProfileManagementScreenContent extends StatefulWidget {
   const ProfileManagementScreenContent({super.key});
@@ -14,20 +16,15 @@ class _ProfileManagementScreenContentState
     extends State<ProfileManagementScreenContent> {
   bool _isEditing = false;
 
-  String _fullName = 'Sarah Mitchell';
-  String _email = 'sarah.mitchell@acmeassets.com';
-  final String _role = 'Admin';
-  final bool _isActive = true;
-  final String _username = 's.mitchell';
-
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
-    _nameController.text = _fullName;
-    _emailController.text = _email;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<ProfileManagementScreenViewModel>().fetchProfile();
+    });
   }
 
   @override
@@ -37,29 +34,31 @@ class _ProfileManagementScreenContentState
     super.dispose();
   }
 
-  void _startEdit() {
-    _nameController.text = _fullName;
-    _emailController.text = _email;
+  void _startEdit(BuildContext context) {
+    final vm = context.read<ProfileManagementScreenViewModel>();
+    _nameController.text = vm.displayFullName;
+    _emailController.text = vm.displayEmail;
     setState(() => _isEditing = true);
   }
 
-  void _cancelEdit() {
-    _nameController.text = _fullName;
-    _emailController.text = _email;
+  void _cancelEdit(BuildContext context) {
+    final vm = context.read<ProfileManagementScreenViewModel>();
+    _nameController.text = vm.displayFullName;
+    _emailController.text = vm.displayEmail;
     setState(() => _isEditing = false);
   }
 
-  void _saveProfile() {
-    setState(() {
-      _fullName = _nameController.text.trim().isEmpty
-          ? _fullName
-          : _nameController.text.trim();
-      _email = _emailController.text.trim().isEmpty
-          ? _email
-          : _emailController.text.trim();
-      _isEditing = false;
-    });
-    if (mounted) {
+  Future<void> _saveProfile(BuildContext context) async {
+    final vm = context.read<ProfileManagementScreenViewModel>();
+    final name = _nameController.text.trim();
+    final email = _emailController.text.trim();
+    final fullName = name.isEmpty ? vm.displayFullName : name;
+    final emailVal = email.isEmpty ? vm.displayEmail : email;
+    final success = await vm.updateProfile(fullName: fullName, email: emailVal);
+    if (!mounted) return;
+    if (success) {
+      setState(() => _isEditing = false);
+      vm.clearError();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: const Text('Profile updated successfully'),
@@ -67,14 +66,28 @@ class _ProfileManagementScreenContentState
           behavior: SnackBarBehavior.floating,
         ),
       );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(vm.errorMessage ?? 'Failed to update profile'),
+          backgroundColor: AppColors.redColor,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
     }
   }
 
   void _showChangePasswordDialog() {
+    final vm = context.read<ProfileManagementScreenViewModel>();
     showDialog(
       context: context,
       builder: (ctx) => _ChangePasswordDialog(
-        onChanged: () {
+        onSubmit: (current, newPw, confirm) => vm.changePassword(
+          currentPassword: current,
+          newPassword: newPw,
+          confirmNewPassword: confirm,
+        ),
+        onSuccess: () {
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
@@ -91,64 +104,103 @@ class _ProfileManagementScreenContentState
 
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final isNarrow = constraints.maxWidth < 600;
-        final padding = EdgeInsets.fromLTRB(
-          context.w(isNarrow ? 16 : 24),
-          0,
-          context.w(isNarrow ? 16 : 24),
-          context.h(24),
-        );
-        return SingleChildScrollView(
-          padding: padding,
-          child: ConstrainedBox(
-            constraints: BoxConstraints(
-              maxWidth: 720,
-              minHeight: constraints.maxHeight,
+    return Consumer<ProfileManagementScreenViewModel>(
+      builder: (context, vm, child) {
+        if (vm.isLoading && vm.profile == null) {
+          return Center(
+            child: Padding(
+              padding: EdgeInsets.all(context.h(48)),
+              child: const CircularProgressIndicator(),
             ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Profile Management',
-                  style: TextStyle(
-                    color: AppColors.headingColor,
-                    fontSize: context.text(24),
-                    fontWeight: FontWeight.w700,
+          );
+        }
+        if (vm.errorMessage != null && vm.profile == null) {
+          return Center(
+            child: Padding(
+              padding: EdgeInsets.all(context.h(24)),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    vm.errorMessage!,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: AppColors.subHeadingColor,
+                      fontSize: context.text(14),
+                    ),
                   ),
-                ),
-                SizedBox(height: context.h(8)),
-                Text(
-                  'Personal Information',
-                  style: TextStyle(
-                    color: AppColors.subHeadingColor,
-                    fontSize: context.text(14),
-                    fontWeight: FontWeight.w400,
+                  SizedBox(height: context.h(16)),
+                  TextButton.icon(
+                    onPressed: vm.fetchProfile,
+                    icon: const Icon(Icons.refresh),
+                    label: const Text('Retry'),
                   ),
-                ),
-                SizedBox(height: context.h(24)),
-                _ProfileCard(
-                  title: 'Profile Information',
-                  isEditing: _isEditing,
-                  onEdit: _startEdit,
-                  onCancel: _cancelEdit,
-                  onSave: _saveProfile,
-                  nameController: _nameController,
-                  emailController: _emailController,
-                  fullName: _fullName,
-                  email: _email,
-                  role: _role,
-                  isActive: _isActive,
-                ),
-                SizedBox(height: context.h(20)),
-                _AccountDetailsCard(
-                  username: _username,
-                  onChangePassword: _showChangePasswordDialog,
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
+          );
+        }
+        return LayoutBuilder(
+          builder: (context, constraints) {
+            final isNarrow = constraints.maxWidth < 600;
+            final padding = EdgeInsets.fromLTRB(
+              context.w(isNarrow ? 16 : 24),
+              0,
+              context.w(isNarrow ? 16 : 24),
+              context.h(24),
+            );
+            return SingleChildScrollView(
+              padding: padding,
+              child: ConstrainedBox(
+                constraints: BoxConstraints(
+                  maxWidth: 720,
+                  minHeight: constraints.maxHeight,
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Profile Management',
+                      style: TextStyle(
+                        color: AppColors.headingColor,
+                        fontSize: context.text(24),
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    SizedBox(height: context.h(8)),
+                    Text(
+                      'Personal Information',
+                      style: TextStyle(
+                        color: AppColors.subHeadingColor,
+                        fontSize: context.text(14),
+                        fontWeight: FontWeight.w400,
+                      ),
+                    ),
+                    SizedBox(height: context.h(24)),
+                    _ProfileCard(
+                      title: 'Profile Information',
+                      isEditing: _isEditing,
+                      isSaving: vm.isSaving,
+                      onEdit: () => _startEdit(context),
+                      onCancel: () => _cancelEdit(context),
+                      onSave: () => _saveProfile(context),
+                      nameController: _nameController,
+                      emailController: _emailController,
+                      fullName: vm.displayFullName,
+                      email: vm.displayEmail,
+                      role: vm.department,
+                      isActive: vm.isActive,
+                    ),
+                    SizedBox(height: context.h(20)),
+                    _AccountDetailsCard(
+                      username: vm.username,
+                      onChangePassword: _showChangePasswordDialog,
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
         );
       },
     );
@@ -159,6 +211,7 @@ class _ProfileCard extends StatelessWidget {
   const _ProfileCard({
     required this.title,
     required this.isEditing,
+    required this.isSaving,
     required this.onEdit,
     required this.onCancel,
     required this.onSave,
@@ -172,6 +225,7 @@ class _ProfileCard extends StatelessWidget {
 
   final String title;
   final bool isEditing;
+  final bool isSaving;
   final VoidCallback onEdit;
   final VoidCallback onCancel;
   final VoidCallback onSave;
@@ -210,7 +264,7 @@ class _ProfileCard extends StatelessWidget {
               ),
               if (!isEditing)
                 TextButton(
-                  onPressed: onEdit,
+                  onPressed: isSaving ? null : onEdit,
                   style: TextButton.styleFrom(
                     foregroundColor: AppColors.headingColor,
                   ),
@@ -307,7 +361,7 @@ class _ProfileCard extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
                 TextButton(
-                  onPressed: onCancel,
+                  onPressed: isSaving ? null : onCancel,
                   style: TextButton.styleFrom(
                     foregroundColor: AppColors.headingColor,
                   ),
@@ -318,23 +372,31 @@ class _ProfileCard extends StatelessWidget {
                 ),
                 SizedBox(width: context.w(12)),
                 FilledButton(
-                  onPressed: onSave,
+                  onPressed: isSaving ? null : onSave,
                   style: FilledButton.styleFrom(
                     backgroundColor: AppColors.buttonColor,
                     foregroundColor: AppColors.headingColor,
-
                     padding: context.padSym(h: 20, v: 12),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(context.radius(8)),
                     ),
                   ),
-                  child: Text(
-                    'Save',
-                    style: TextStyle(
-                      fontSize: context.text(14),
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
+                  child: isSaving
+                      ? SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: AppColors.headingColor,
+                          ),
+                        )
+                      : Text(
+                          'Save',
+                          style: TextStyle(
+                            fontSize: context.text(14),
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
                 ),
               ],
             ),
@@ -531,9 +593,17 @@ class _AccountDetailsCard extends StatelessWidget {
 }
 
 class _ChangePasswordDialog extends StatefulWidget {
-  const _ChangePasswordDialog({required this.onChanged});
+  const _ChangePasswordDialog({
+    required this.onSubmit,
+    required this.onSuccess,
+  });
 
-  final VoidCallback onChanged;
+  final Future<({bool success, String? errorMessage})> Function(
+    String currentPassword,
+    String newPassword,
+    String confirmNewPassword,
+  ) onSubmit;
+  final VoidCallback onSuccess;
 
   @override
   State<_ChangePasswordDialog> createState() => _ChangePasswordDialogState();
@@ -547,6 +617,7 @@ class _ChangePasswordDialogState extends State<_ChangePasswordDialog> {
   bool _obscureCurrent = true;
   bool _obscureNew = true;
   bool _obscureConfirm = true;
+  bool _isSubmitting = false;
 
   @override
   void dispose() {
@@ -556,7 +627,7 @@ class _ChangePasswordDialogState extends State<_ChangePasswordDialog> {
     super.dispose();
   }
 
-  void _submit() {
+  Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
     if (_newController.text != _confirmController.text) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -568,8 +639,26 @@ class _ChangePasswordDialogState extends State<_ChangePasswordDialog> {
       );
       return;
     }
-    Navigator.of(context).pop();
-    widget.onChanged();
+    setState(() => _isSubmitting = true);
+    final result = await widget.onSubmit(
+      _currentController.text,
+      _newController.text,
+      _confirmController.text,
+    );
+    if (!mounted) return;
+    setState(() => _isSubmitting = false);
+    if (result.success) {
+      Navigator.of(context).pop();
+      widget.onSuccess();
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(result.errorMessage ?? 'Failed to change password'),
+          backgroundColor: AppColors.redColor,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
   }
 
   @override
@@ -726,7 +815,7 @@ class _ChangePasswordDialogState extends State<_ChangePasswordDialog> {
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
                     TextButton(
-                      onPressed: () => Navigator.of(context).pop(),
+                      onPressed: _isSubmitting ? null : () => Navigator.of(context).pop(),
                       style: TextButton.styleFrom(
                         foregroundColor: AppColors.headingColor,
                       ),
@@ -737,7 +826,7 @@ class _ChangePasswordDialogState extends State<_ChangePasswordDialog> {
                     ),
                     SizedBox(width: context.w(12)),
                     FilledButton(
-                      onPressed: _submit,
+                      onPressed: _isSubmitting ? null : _submit,
                       style: FilledButton.styleFrom(
                         backgroundColor: AppColors.buttonColor,
                         foregroundColor: AppColors.headingColor,
@@ -748,13 +837,22 @@ class _ChangePasswordDialogState extends State<_ChangePasswordDialog> {
                           ),
                         ),
                       ),
-                      child: Text(
-                        'Change Password',
-                        style: TextStyle(
-                          fontSize: context.text(14),
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
+                      child: _isSubmitting
+                          ? SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: AppColors.headingColor,
+                              ),
+                            )
+                          : Text(
+                              'Change Password',
+                              style: TextStyle(
+                                fontSize: context.text(14),
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
                     ),
                   ],
                 ),

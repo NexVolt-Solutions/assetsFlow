@@ -1,6 +1,8 @@
 import 'package:asset_flow/Core/Constants/app_colors.dart';
 import 'package:asset_flow/Core/Constants/size_extension.dart';
+import 'package:asset_flow/viewModel/repair_management_screen_view_model.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 enum RepairStatus { inRepair, fixed, notRepairable }
 
@@ -65,23 +67,29 @@ class RepairManagementScreenContent extends StatefulWidget {
 
 class _RepairManagementScreenContentState
     extends State<RepairManagementScreenContent> {
-  late final List<RepairEntry> _repairList = List.from(kDemoRepairEntries);
-
-  int get _inRepairCount =>
-      _repairList.where((e) => e.status == RepairStatus.inRepair).length;
-
-  void _updateStatus(RepairEntry entry, RepairStatus newStatus) {
-    setState(() {
-      final i = _repairList.indexWhere((e) => e.id == entry.id);
-      if (i >= 0) _repairList[i] = entry.copyWith(status: newStatus);
-    });
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('${entry.name} marked as ${newStatus.label}'),
-        backgroundColor: _snackBarColorForStatus(newStatus),
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
+  Future<void> _updateStatus(
+      BuildContext context, RepairEntry entry, RepairStatus newStatus) async {
+    final vm = context.read<RepairManagementScreenViewModel>();
+    final success = await vm.updateRepairStatus(entry.id, newStatus);
+    if (!mounted) return;
+    if (success) {
+      vm.clearError();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('${entry.name} marked as ${newStatus.label}'),
+          backgroundColor: _snackBarColorForStatus(newStatus),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(vm.errorMessage ?? 'Failed to update repair status'),
+          backgroundColor: AppColors.removeButtonBg,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
   }
 
   Color _snackBarColorForStatus(RepairStatus status) {
@@ -97,58 +105,73 @@ class _RepairManagementScreenContentState
 
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      padding: EdgeInsets.fromLTRB(
-        context.w(24),
-        0,
-        context.w(24),
-        context.h(24),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Repair Management',
-            style: TextStyle(
-              color: AppColors.headingColor,
-              fontSize: context.text(24),
-              fontWeight: FontWeight.w700,
-            ),
+    return Consumer<RepairManagementScreenViewModel>(
+      builder: (context, vm, _) {
+        final repairList = vm.items;
+        final inRepairCount = vm.inRepairCount;
+        return SingleChildScrollView(
+          padding: EdgeInsets.fromLTRB(
+            context.w(24),
+            0,
+            context.w(24),
+            context.h(24),
           ),
-          SizedBox(height: context.h(4)),
-          Text(
-            '$_inRepairCount assets currently under repair',
-            style: TextStyle(
-              color: AppColors.subHeadingColor,
-              fontSize: context.text(14),
-              fontWeight: FontWeight.w400,
-            ),
-          ),
-          SizedBox(height: context.h(24)),
-          _buildStatusLegend(context),
-          SizedBox(height: context.h(20)),
-          ListView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: _repairList.length,
-            itemBuilder: (context, index) {
-              final entry = _repairList[index];
-              return Padding(
-                key: ValueKey(entry.id),
-                padding: EdgeInsets.only(bottom: context.h(16)),
-                child: RepairAssetCard(
-                  entry: entry,
-                  onMarkFixed: () => _updateStatus(entry, RepairStatus.fixed),
-                  onUnderRepair: () =>
-                      _updateStatus(entry, RepairStatus.inRepair),
-                  onNotRepairable: () =>
-                      _updateStatus(entry, RepairStatus.notRepairable),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Repair Management',
+                style: TextStyle(
+                  color: AppColors.headingColor,
+                  fontSize: context.text(24),
+                  fontWeight: FontWeight.w700,
                 ),
-              );
-            },
+              ),
+              SizedBox(height: context.h(4)),
+              Text(
+                '$inRepairCount assets currently under repair',
+                style: TextStyle(
+                  color: AppColors.subHeadingColor,
+                  fontSize: context.text(14),
+                  fontWeight: FontWeight.w400,
+                ),
+              ),
+              SizedBox(height: context.h(24)),
+              _buildStatusLegend(context),
+              SizedBox(height: context.h(20)),
+              ListView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: repairList.length,
+                itemBuilder: (context, index) {
+                  final entry = repairList[index];
+                  final isUpdating = vm.isUpdating(entry.id);
+                  return Padding(
+                    key: ValueKey(entry.id),
+                    padding: EdgeInsets.only(bottom: context.h(16)),
+                    child: RepairAssetCard(
+                      entry: entry,
+                      isUpdating: isUpdating,
+                      onMarkFixed: isUpdating
+                          ? null
+                          : () => _updateStatus(
+                              context, entry, RepairStatus.fixed),
+                      onUnderRepair: isUpdating
+                          ? null
+                          : () => _updateStatus(
+                              context, entry, RepairStatus.inRepair),
+                      onNotRepairable: isUpdating
+                          ? null
+                          : () => _updateStatus(
+                              context, entry, RepairStatus.notRepairable),
+                    ),
+                  );
+                },
+              ),
+            ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 
@@ -210,16 +233,18 @@ class _StatusLegendItem extends StatelessWidget {
 
 class RepairAssetCard extends StatelessWidget {
   final RepairEntry entry;
-  final VoidCallback onMarkFixed;
-  final VoidCallback onUnderRepair;
-  final VoidCallback onNotRepairable;
+  final bool isUpdating;
+  final VoidCallback? onMarkFixed;
+  final VoidCallback? onUnderRepair;
+  final VoidCallback? onNotRepairable;
 
   const RepairAssetCard({
     super.key,
     required this.entry,
-    required this.onMarkFixed,
-    required this.onUnderRepair,
-    required this.onNotRepairable,
+    this.isUpdating = false,
+    this.onMarkFixed,
+    this.onUnderRepair,
+    this.onNotRepairable,
   });
 
   @override
@@ -332,7 +357,7 @@ class RepairAssetCard extends StatelessWidget {
 
   List<Widget> _buildButtons() => [
     _ActionButton(
-      label: 'Mark Fixed',
+      label: isUpdating ? 'Updating...' : 'Mark Fixed',
       backgroundColor: AppColors.repairMarkFixedBg,
       onTap: onMarkFixed,
     ),
@@ -352,12 +377,12 @@ class RepairAssetCard extends StatelessWidget {
 class _ActionButton extends StatelessWidget {
   final String label;
   final Color backgroundColor;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
 
   const _ActionButton({
     required this.label,
     required this.backgroundColor,
-    required this.onTap,
+    this.onTap,
   });
 
   @override

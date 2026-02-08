@@ -2,46 +2,9 @@ import 'package:asset_flow/Core/Constants/app_colors.dart';
 import 'package:asset_flow/Core/Constants/size_extension.dart';
 import 'package:asset_flow/Core/Model/asset_model.dart';
 import 'package:asset_flow/Core/Widget/detail_row.dart';
+import 'package:asset_flow/viewModel/store_inventory_screen_view_model.dart';
 import 'package:flutter/material.dart';
-
-/// Demo list of assets currently in store (matches design: MacBook, Samsung, Sony).
-List<AssetItem> get kStoreDemoAssets => [
-  AssetItem(
-    id: 's1',
-    name: 'MacBook Pro 16"',
-    assetId: 'LP-2024-001',
-    category: 'Laptop',
-    status: 'In Store',
-    brand: 'Apple',
-    model: 'MacBook Pro',
-    condition: 'Good',
-    assignedTo: '—',
-    lastReturnedBy: 'James Okafor',
-  ),
-  AssetItem(
-    id: 's2',
-    name: 'Samsung Galaxy S24',
-    assetId: 'MB-2024-002',
-    category: 'Mobile',
-    status: 'In Store',
-    brand: 'Samsung',
-    model: 'Galaxy S24',
-    condition: 'Good',
-    assignedTo: '—',
-    lastReturnedBy: 'Omar Hassan',
-  ),
-  AssetItem(
-    id: 's3',
-    name: 'Sony WH-1000XM5',
-    assetId: 'HS-2024-002',
-    category: 'Headset',
-    status: 'In Store',
-    brand: 'Sony',
-    model: 'WH-1000XM5',
-    condition: 'Good',
-    assignedTo: '—',
-  ),
-];
+import 'package:provider/provider.dart';
 
 class StoreInventoryScreenContent extends StatefulWidget {
   const StoreInventoryScreenContent({super.key});
@@ -53,8 +16,6 @@ class StoreInventoryScreenContent extends StatefulWidget {
 
 class _StoreInventoryScreenContentState
     extends State<StoreInventoryScreenContent> {
-  late final List<AssetItem> _storeAssets = kStoreDemoAssets;
-
   static IconData _iconForCategory(String category) {
     switch (category.toLowerCase()) {
       case 'laptop':
@@ -75,63 +36,109 @@ class _StoreInventoryScreenContentState
   }
 
   @override
-  Widget build(BuildContext context) {
-    final count = _storeAssets.length;
-    return SingleChildScrollView(
-      padding: EdgeInsets.fromLTRB(
-        context.w(24),
-        0,
-        context.w(24),
-        context.h(24),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Store / Inventory',
-            style: TextStyle(
-              color: AppColors.headingColor,
-              fontSize: context.text(24),
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-          SizedBox(height: context.h(4)),
-          Text(
-            '$count assets available in store',
-            style: TextStyle(
-              color: AppColors.subHeadingColor,
-              fontSize: context.text(14),
-              fontWeight: FontWeight.w400,
-            ),
-          ),
-          SizedBox(height: context.h(24)),
-          LayoutBuilder(
-            builder: (context, constraints) {
-              final width = constraints.maxWidth;
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<StoreInventoryScreenViewModel>().fetchStoreAssets();
+    });
+  }
 
-              final crossAxisCount = width > 900 ? 3 : (width > 600 ? 2 : 1);
-              return GridView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: crossAxisCount,
-                  mainAxisSpacing: context.h(16),
-                  crossAxisSpacing: context.w(16),
-                  childAspectRatio: 1.5,
+  @override
+  Widget build(BuildContext context) {
+    return Consumer<StoreInventoryScreenViewModel>(
+      builder: (context, vm, child) {
+        if (vm.isLoading && vm.storeAssets.isEmpty) {
+          return Center(
+            child: Padding(
+              padding: EdgeInsets.all(context.h(48)),
+              child: const CircularProgressIndicator(),
+            ),
+          );
+        }
+        if (vm.errorMessage != null && vm.storeAssets.isEmpty) {
+          return Center(
+            child: Padding(
+              padding: EdgeInsets.all(context.h(24)),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    vm.errorMessage!,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: AppColors.subHeadingColor,
+                      fontSize: context.text(14),
+                    ),
+                  ),
+                  SizedBox(height: context.h(16)),
+                  TextButton.icon(
+                    onPressed: vm.fetchStoreAssets,
+                    icon: const Icon(Icons.refresh),
+                    label: const Text('Retry'),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
+        final storeAssets = vm.storeAssets;
+        final count = storeAssets.length;
+        return SingleChildScrollView(
+          padding: EdgeInsets.fromLTRB(
+            context.w(24),
+            0,
+            context.w(24),
+            context.h(24),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Store / Inventory',
+                style: TextStyle(
+                  color: AppColors.headingColor,
+                  fontSize: context.text(24),
+                  fontWeight: FontWeight.w700,
                 ),
-                itemCount: _storeAssets.length,
-                itemBuilder: (context, index) {
-                  final asset = _storeAssets[index];
-                  return StoreItemCard(
-                    asset: asset,
-                    icon: _iconForCategory(asset.category),
+              ),
+              SizedBox(height: context.h(4)),
+              Text(
+                '$count assets available in store',
+                style: TextStyle(
+                  color: AppColors.subHeadingColor,
+                  fontSize: context.text(14),
+                  fontWeight: FontWeight.w400,
+                ),
+              ),
+              SizedBox(height: context.h(24)),
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  final width = constraints.maxWidth;
+                  final crossAxisCount = width > 900 ? 3 : (width > 600 ? 2 : 1);
+                  return GridView.builder(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: crossAxisCount,
+                      mainAxisSpacing: context.h(16),
+                      crossAxisSpacing: context.w(16),
+                      childAspectRatio: 1.5,
+                    ),
+                    itemCount: storeAssets.length,
+                    itemBuilder: (context, index) {
+                      final asset = storeAssets[index];
+                      return StoreItemCard(
+                        asset: asset,
+                        icon: _iconForCategory(asset.category),
+                      );
+                    },
                   );
                 },
-              );
-            },
+              ),
+            ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 }

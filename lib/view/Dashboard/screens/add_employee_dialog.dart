@@ -32,6 +32,9 @@ class AddEmployeeDialogResult {
   final String status;
   final DateTime? joiningDate;
   final DateTime? resignationDate;
+  /// For Add only: email and password for API registration.
+  final String? email;
+  final String? password;
 
   AddEmployeeDialogResult({
     required this.employeeId,
@@ -41,6 +44,8 @@ class AddEmployeeDialogResult {
     required this.status,
     this.joiningDate,
     this.resignationDate,
+    this.email,
+    this.password,
   });
 }
 
@@ -67,6 +72,8 @@ class _AddEmployeeDialogState extends State<AddEmployeeDialog> {
   late final TextEditingController _employeeIdController;
   late final TextEditingController _employeeCodeController;
   late final TextEditingController _fullNameController;
+  late final TextEditingController _emailController;
+  late final TextEditingController _passwordController;
   late final TextEditingController _joiningDateController;
   late final TextEditingController _resignationDateController;
 
@@ -101,6 +108,8 @@ class _AddEmployeeDialogState extends State<AddEmployeeDialog> {
       _employeeIdController = TextEditingController(text: _kDefaultId);
       _employeeCodeController = TextEditingController(text: _kDefaultId);
       _fullNameController = TextEditingController();
+      _emailController = TextEditingController();
+      _passwordController = TextEditingController();
       _joiningDateController = TextEditingController();
       _resignationDateController = TextEditingController();
     }
@@ -135,6 +144,8 @@ class _AddEmployeeDialogState extends State<AddEmployeeDialog> {
     _employeeIdController.dispose();
     _employeeCodeController.dispose();
     _fullNameController.dispose();
+    _emailController.dispose();
+    _passwordController.dispose();
     _joiningDateController.dispose();
     _resignationDateController.dispose();
     super.dispose();
@@ -182,6 +193,7 @@ class _AddEmployeeDialogState extends State<AddEmployeeDialog> {
 
   void _onSave() {
     if (_formKey.currentState?.validate() ?? false) {
+      final isAdd = widget.existing == null;
       Navigator.of(context).pop(
         AddEmployeeDialogResult(
           employeeId: _employeeIdController.text.trim(),
@@ -191,6 +203,8 @@ class _AddEmployeeDialogState extends State<AddEmployeeDialog> {
           status: _status,
           joiningDate: _joiningDate,
           resignationDate: _resignationDate,
+          email: isAdd ? _emailController.text.trim() : null,
+          password: isAdd ? _passwordController.text.trim() : null,
         ),
       );
     }
@@ -225,6 +239,12 @@ class _AddEmployeeDialogState extends State<AddEmployeeDialog> {
                   _buildSingleColumnFields(context),
                 SizedBox(height: context.h(16)),
                 _buildFullNameField(context),
+                if (widget.existing == null) ...[
+                  SizedBox(height: context.h(16)),
+                  _buildEmailField(context),
+                  SizedBox(height: context.h(16)),
+                  _buildPasswordField(context),
+                ],
                 SizedBox(height: context.h(16)),
                 if (isWide)
                   _buildDepartmentStatusRow(context)
@@ -366,6 +386,59 @@ class _AddEmployeeDialogState extends State<AddEmployeeDialog> {
     );
   }
 
+  Widget _buildEmailField(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Email',
+          style: TextStyle(
+            color: AppColors.subHeadingColor,
+            fontSize: context.text(14),
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        SizedBox(height: context.h(8)),
+        _styledTextField(
+          context,
+          controller: _emailController,
+          hint: 'user@example.com',
+          validator: (v) {
+            if (v == null || v.trim().isEmpty) return 'Enter email';
+            return null;
+          },
+        ),
+      ],
+    );
+  }
+
+  Widget _buildPasswordField(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Password',
+          style: TextStyle(
+            color: AppColors.subHeadingColor,
+            fontSize: context.text(14),
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        SizedBox(height: context.h(8)),
+        _styledTextField(
+          context,
+          controller: _passwordController,
+          hint: 'Enter password',
+          obscureText: true,
+          validator: (v) {
+            if (v == null || v.isEmpty) return 'Enter password';
+            return null;
+          },
+        ),
+      ],
+    );
+  }
+
   Widget _buildDepartmentStatusRow(BuildContext context) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -499,6 +572,7 @@ class _AddEmployeeDialogState extends State<AddEmployeeDialog> {
     required TextEditingController controller,
     required String hint,
     bool readOnly = false,
+    bool obscureText = false,
     Widget? suffixIcon,
     String? Function(String?)? validator,
   }) {
@@ -510,6 +584,7 @@ class _AddEmployeeDialogState extends State<AddEmployeeDialog> {
       child: TextFormField(
         controller: controller,
         readOnly: readOnly,
+        obscureText: obscureText,
         validator: validator,
         style: TextStyle(
           color: AppColors.headingColor,

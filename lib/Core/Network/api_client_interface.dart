@@ -39,6 +39,16 @@ abstract interface class ApiClientInterface {
     Map<String, String>? headers,
     Object? body,
   });
+
+  /// POST multipart file upload. [fileField] is the form field name, [fileBytes] the file content, [filename] the file name.
+  Future<ApiResult<dynamic>> postMultipart(
+    String path, {
+    required String fileField,
+    required List<int> fileBytes,
+    required String filename,
+    Map<String, String>? fields,
+    Map<String, String>? headers,
+  });
 }
 
 /// Result of an API call. [T] is the decoded response body type.

@@ -1,27 +1,13 @@
 import 'package:asset_flow/Core/Constants/app_colors.dart';
 import 'package:asset_flow/Core/Constants/size_extension.dart';
+import 'package:asset_flow/Core/Model/report_model.dart';
+import 'package:asset_flow/viewModel/asset_reports_screen_view_model.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
-
-enum ReportPeriod { day, week, month, yearly }
-
-extension ReportPeriodX on ReportPeriod {
-  String get label {
-    switch (this) {
-      case ReportPeriod.day:
-        return 'Day';
-      case ReportPeriod.week:
-        return 'Week';
-      case ReportPeriod.month:
-        return 'Month';
-      case ReportPeriod.yearly:
-        return 'Yearly';
-    }
-  }
-}
+import 'package:provider/provider.dart';
 
 enum ReportActionType { assigned, returned, damaged, repair }
 
@@ -60,64 +46,22 @@ extension ReportActionTypeX on ReportActionType {
   }
 }
 
-class AssetReportEntry {
-  final String assetName;
-  final String assetId;
-  final String assetCode;
-  final String employee;
-  final ReportActionType action;
-  final String date;
-  final String assetCategory;
-
-  AssetReportEntry({
-    required this.assetName,
-    required this.assetId,
-    required this.assetCode,
-    required this.employee,
-    required this.action,
-    required this.date,
-    required this.assetCategory,
-  });
+ReportActionType _actionTypeFromString(String s) {
+  final lower = s.trim().toLowerCase();
+  switch (lower) {
+    case 'assigned':
+      return ReportActionType.assigned;
+    case 'returned':
+      return ReportActionType.returned;
+    case 'damaged':
+      return ReportActionType.damaged;
+    case 'repair':
+    case 'repaired':
+      return ReportActionType.repair;
+    default:
+      return ReportActionType.assigned;
+  }
 }
-
-List<AssetReportEntry> get kDemoReportEntries => [
-  AssetReportEntry(
-    assetName: 'MacBook Pro 16"',
-    assetId: 'LP-2024-001',
-    assetCode: 'AST-0012',
-    employee: 'Sarah Chen',
-    action: ReportActionType.assigned,
-    date: '2026-02-07',
-    assetCategory: 'Laptop',
-  ),
-  AssetReportEntry(
-    assetName: 'Logitech MX Master',
-    assetId: 'MS-2024-001',
-    assetCode: 'AST-0045',
-    employee: 'James Wilson',
-    action: ReportActionType.returned,
-    date: '2026-02-07',
-    assetCategory: 'Mouse',
-  ),
-  AssetReportEntry(
-    assetName: 'Dell UltraSharp 27"',
-    assetId: 'MN-2024-001',
-    assetCode: 'AST-0098',
-    employee: 'Priya Patel',
-    action: ReportActionType.damaged,
-    date: '2026-02-06',
-    assetCategory: 'Monitor',
-  ),
-  AssetReportEntry(
-    assetName: 'ThinkPad X1 Carbon',
-    assetId: 'LP-2024-002',
-    assetCode: 'AST-0134',
-    employee: 'Marcus Lee',
-    action: ReportActionType.repair,
-    date: '2026-02-06',
-    assetCategory: 'Laptop',
-  ),
-];
 
 class AssetReportsScreenContent extends StatefulWidget {
   const AssetReportsScreenContent({super.key});
@@ -128,32 +72,11 @@ class AssetReportsScreenContent extends StatefulWidget {
 }
 
 class _AssetReportsScreenContentState extends State<AssetReportsScreenContent> {
-  ReportPeriod _period = ReportPeriod.day;
-  late final List<AssetReportEntry> _entries = List.from(kDemoReportEntries);
+  Future<void> _downloadPdf(BuildContext context) async {
+    final vm = context.read<AssetReportsScreenViewModel>();
+    final period = vm.period;
+    final items = vm.items;
 
-  List<AssetReportEntry> get _filteredEntries => _entries;
-
-  static IconData _iconForCategory(String category) {
-    switch (category.toLowerCase()) {
-      case 'laptop':
-        return Icons.laptop_mac;
-      case 'mouse':
-        return Icons.mouse;
-      case 'keyboard':
-        return Icons.keyboard;
-      case 'monitor':
-        return Icons.monitor;
-      case 'mobile':
-        return Icons.smartphone;
-      case 'headset':
-        return Icons.headset;
-      default:
-        return Icons.devices_other;
-    }
-  }
-
-  Future<void> _downloadPdf() async {
-    // Use Unicode-capable theme (OpenSans) so Helvetica is not used for text.
     await pdfDefaultTheme();
 
     final pdf = pw.Document();
@@ -164,7 +87,7 @@ class _AssetReportsScreenContentState extends State<AssetReportsScreenContent> {
           pw.Header(
             level: 0,
             child: pw.Text(
-              'Asset Reports - ${_period.label}',
+              'Asset Reports - ${period.label}',
               style: pw.TextStyle(fontSize: 22, fontWeight: pw.FontWeight.bold),
             ),
           ),
@@ -189,13 +112,13 @@ class _AssetReportsScreenContentState extends State<AssetReportsScreenContent> {
                   _pdfCell('Date'),
                 ],
               ),
-              ..._filteredEntries.map(
+              ...items.map(
                 (e) => pw.TableRow(
                   children: [
-                    _pdfCell('${e.assetName} (${e.assetId})'),
+                    _pdfCell('${e.assetName} (${e.assetCode})'),
                     _pdfCell(e.assetCode),
-                    _pdfCell(e.employee),
-                    _pdfCell(e.action.label),
+                    _pdfCell(e.employeeName),
+                    _pdfCell(e.action),
                     _pdfCell(e.date),
                   ],
                 ),
@@ -208,7 +131,7 @@ class _AssetReportsScreenContentState extends State<AssetReportsScreenContent> {
 
     final bytes = await pdf.save();
     final filename =
-        'Asset_Report_${_period.label}_${DateTime.now().millisecondsSinceEpoch}.pdf';
+        'Asset_Report_${period.label}_${DateTime.now().millisecondsSinceEpoch}.pdf';
 
     try {
       final ok = await Printing.sharePdf(bytes: bytes, filename: filename);
@@ -246,122 +169,171 @@ class _AssetReportsScreenContentState extends State<AssetReportsScreenContent> {
   );
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<AssetReportsScreenViewModel>().fetchAssetHistory();
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      padding: EdgeInsets.fromLTRB(
-        context.w(24),
-        0,
-        context.w(24),
-        context.h(24),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Asset Reports',
-            style: TextStyle(
-              color: AppColors.headingColor,
-              fontSize: context.text(24),
-              fontWeight: FontWeight.w700,
+    return Consumer<AssetReportsScreenViewModel>(
+      builder: (context, vm, child) {
+        if (vm.isLoading && vm.items.isEmpty) {
+          return Center(
+            child: Padding(
+              padding: EdgeInsets.all(context.h(48)),
+              child: const CircularProgressIndicator(),
             ),
+          );
+        }
+        if (vm.errorMessage != null && vm.items.isEmpty) {
+          return Center(
+            child: Padding(
+              padding: EdgeInsets.all(context.h(24)),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    vm.errorMessage!,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: AppColors.subHeadingColor,
+                      fontSize: context.text(14),
+                    ),
+                  ),
+                  SizedBox(height: context.h(16)),
+                  TextButton.icon(
+                    onPressed: vm.fetchAssetHistory,
+                    icon: const Icon(Icons.refresh),
+                    label: const Text('Retry'),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
+        final items = vm.items;
+        return SingleChildScrollView(
+          padding: EdgeInsets.fromLTRB(
+            context.w(24),
+            0,
+            context.w(24),
+            context.h(24),
           ),
-          SizedBox(height: context.h(20)),
-          Wrap(
-            spacing: context.w(10),
-            runSpacing: context.h(10),
-            crossAxisAlignment: WrapCrossAlignment.center,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              ...ReportPeriod.values.map((p) {
-                final isActive = _period == p;
-                return Material(
-                  color: isActive
-                      ? AppColors.reportFilterActiveBg
-                      : AppColors.reportFilterInactiveBg,
-                  borderRadius: BorderRadius.circular(context.radius(20)),
-                  child: InkWell(
-                    onTap: () => setState(() => _period = p),
-                    borderRadius: BorderRadius.circular(context.radius(20)),
-                    child: Container(
-                      padding: context.padSym(h: 18, v: 10),
-                      child: Text(
-                        p.label,
-                        style: TextStyle(
-                          color: isActive
-                              ? AppColors.headingColor
-                              : AppColors.subHeadingColor,
-                          fontSize: context.text(14),
-                          fontWeight: isActive
-                              ? FontWeight.w600
-                              : FontWeight.w500,
+              Text(
+                'Asset Reports',
+                style: TextStyle(
+                  color: AppColors.headingColor,
+                  fontSize: context.text(24),
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              SizedBox(height: context.h(20)),
+              Wrap(
+                spacing: context.w(10),
+                runSpacing: context.h(10),
+                crossAxisAlignment: WrapCrossAlignment.center,
+                children: [
+                  ...ReportPeriod.values.map((p) {
+                    final isActive = vm.period == p;
+                    return Material(
+                      color: isActive
+                          ? AppColors.reportFilterActiveBg
+                          : AppColors.reportFilterInactiveBg,
+                      borderRadius: BorderRadius.circular(context.radius(20)),
+                      child: InkWell(
+                        onTap: vm.isLoading ? null : () => vm.setPeriod(p),
+                        borderRadius: BorderRadius.circular(context.radius(20)),
+                        child: Container(
+                          padding: context.padSym(h: 18, v: 10),
+                          child: Text(
+                            p.label,
+                            style: TextStyle(
+                              color: isActive
+                                  ? AppColors.headingColor
+                                  : AppColors.subHeadingColor,
+                              fontSize: context.text(14),
+                              fontWeight: isActive
+                                  ? FontWeight.w600
+                                  : FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                      ),
+                    );
+                  }),
+                  Material(
+                    color: AppColors.reportPillRepair,
+                    borderRadius: BorderRadius.circular(context.radius(10)),
+                    child: InkWell(
+                      onTap: vm.isLoading
+                          ? null
+                          : () => _downloadPdf(context),
+                      borderRadius: BorderRadius.circular(context.radius(10)),
+                      child: Padding(
+                        padding: context.padSym(h: 16, v: 10),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.download,
+                              color: AppColors.headingColor,
+                              size: 20,
+                            ),
+                            SizedBox(width: context.w(8)),
+                            Text(
+                              'Download PDF',
+                              style: TextStyle(
+                                color: AppColors.headingColor,
+                                fontSize: context.text(14),
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ),
                   ),
-                );
-              }),
-              Material(
-                color: AppColors.reportPillRepair,
-                borderRadius: BorderRadius.circular(context.radius(10)),
-                child: InkWell(
-                  onTap: _downloadPdf,
-                  borderRadius: BorderRadius.circular(context.radius(10)),
-                  child: Padding(
-                    padding: context.padSym(h: 16, v: 10),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.download,
-                          color: AppColors.headingColor,
-                          size: 20,
-                        ),
-                        SizedBox(width: context.w(8)),
-                        Text(
-                          'Download PDF',
-                          style: TextStyle(
-                            color: AppColors.headingColor,
-                            fontSize: context.text(14),
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
+                ],
+              ),
+              SizedBox(height: context.h(28)),
+              Text(
+                'Asset History',
+                style: TextStyle(
+                  color: AppColors.headingColor,
+                  fontSize: context.text(18),
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              SizedBox(height: context.h(16)),
+              Container(
+                decoration: BoxDecoration(
+                  color: AppColors.assignCardBg,
+                  borderRadius: BorderRadius.circular(context.radius(12)),
+                ),
+                clipBehavior: Clip.hardEdge,
+                child: Column(
+                  children: [
+                    _buildTableHeader(context),
+                    ...List.generate(items.length, (i) {
+                      return _ReportRow(
+                        item: items[i],
+                        isStripe: i.isOdd,
+                        icon: Icons.devices_other,
+                      );
+                    }),
+                  ],
                 ),
               ),
             ],
           ),
-          SizedBox(height: context.h(28)),
-          Text(
-            'Asset History',
-            style: TextStyle(
-              color: AppColors.headingColor,
-              fontSize: context.text(18),
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-          SizedBox(height: context.h(16)),
-          Container(
-            decoration: BoxDecoration(
-              color: AppColors.assignCardBg,
-              borderRadius: BorderRadius.circular(context.radius(12)),
-            ),
-            clipBehavior: Clip.hardEdge,
-            child: Column(
-              children: [
-                _buildTableHeader(context),
-                ...List.generate(_filteredEntries.length, (i) {
-                  return _ReportRow(
-                    entry: _filteredEntries[i],
-                    isStripe: i.isOdd,
-                    icon: _iconForCategory(_filteredEntries[i].assetCategory),
-                  );
-                }),
-              ],
-            ),
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 
@@ -393,18 +365,19 @@ class _AssetReportsScreenContentState extends State<AssetReportsScreenContent> {
 }
 
 class _ReportRow extends StatelessWidget {
-  final AssetReportEntry entry;
+  final AssetHistoryItem item;
   final bool isStripe;
   final IconData icon;
 
   const _ReportRow({
-    required this.entry,
+    required this.item,
     required this.isStripe,
     required this.icon,
   });
 
   @override
   Widget build(BuildContext context) {
+    final actionType = _actionTypeFromString(item.action);
     return Container(
       padding: context.padSym(h: 16, v: 12),
       color: isStripe ? AppColors.reportRowStripeBg : Colors.transparent,
@@ -420,7 +393,7 @@ class _ReportRow extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  entry.assetName,
+                  item.assetName,
                   style: TextStyle(
                     color: AppColors.headingColor,
                     fontSize: context.text(14),
@@ -430,7 +403,7 @@ class _ReportRow extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                 ),
                 Text(
-                  entry.assetId,
+                  item.assetCode,
                   style: TextStyle(
                     color: AppColors.subHeadingColor,
                     fontSize: context.text(12),
@@ -443,7 +416,7 @@ class _ReportRow extends StatelessWidget {
           Expanded(
             flex: 1,
             child: Text(
-              entry.assetCode,
+              item.assetCode,
               style: TextStyle(
                 color: AppColors.headingColor,
                 fontSize: context.text(13),
@@ -454,7 +427,7 @@ class _ReportRow extends StatelessWidget {
           Expanded(
             flex: 1,
             child: Text(
-              entry.employee,
+              item.employeeName,
               style: TextStyle(
                 color: AppColors.headingColor,
                 fontSize: context.text(13),
@@ -469,13 +442,13 @@ class _ReportRow extends StatelessWidget {
             child: Container(
               padding: context.padSym(h: 10, v: 4),
               decoration: BoxDecoration(
-                color: entry.action.color.withOpacity(0.25),
+                color: actionType.color.withOpacity(0.25),
                 borderRadius: BorderRadius.circular(context.radius(16)),
               ),
               child: Text(
-                entry.action.label,
+                item.action.isNotEmpty ? item.action : actionType.label,
                 style: TextStyle(
-                  color: entry.action.textColor,
+                  color: actionType.textColor,
                   fontSize: context.text(11),
                   fontWeight: FontWeight.w600,
                 ),
@@ -488,7 +461,7 @@ class _ReportRow extends StatelessWidget {
           Expanded(
             flex: 1,
             child: Text(
-              entry.date,
+              item.date,
               style: TextStyle(
                 color: AppColors.subHeadingColor,
                 fontSize: context.text(13),

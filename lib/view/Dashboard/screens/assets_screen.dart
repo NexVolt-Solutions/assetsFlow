@@ -4,134 +4,18 @@ import 'package:asset_flow/Core/Model/asset_model.dart';
 import 'package:asset_flow/Core/Widget/filter_chips.dart';
 import 'package:asset_flow/Core/Widget/primary_action_button.dart';
 import 'package:asset_flow/Core/Widget/search_input_bar.dart';
+import 'dart:convert';
+import 'dart:typed_data';
+
 import 'package:asset_flow/view/Dashboard/screens/add_asset_dialog.dart';
+import 'package:asset_flow/view/Dashboard/screens/report_damage_dialog.dart';
+import 'package:asset_flow/viewModel/assets_screen_view_model.dart';
+import 'package:asset_flow/viewModel/employee_screen_view_model.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
-
-enum AssetCategory { all, laptop, mouse, keyboard, monitor, mobile, headset }
-
-extension AssetCategoryX on AssetCategory {
-  String get label {
-    switch (this) {
-      case AssetCategory.all:
-        return 'All';
-      case AssetCategory.laptop:
-        return 'Laptop';
-      case AssetCategory.mouse:
-        return 'Mouse';
-      case AssetCategory.keyboard:
-        return 'Keyboard';
-      case AssetCategory.monitor:
-        return 'Monitor';
-      case AssetCategory.mobile:
-        return 'Mobile';
-      case AssetCategory.headset:
-        return 'Headset';
-    }
-  }
-}
-
-enum AssetStatusFilter { all, inUse, store, damaged, underRepair }
-
-extension AssetStatusFilterX on AssetStatusFilter {
-  String get label {
-    switch (this) {
-      case AssetStatusFilter.all:
-        return 'All';
-      case AssetStatusFilter.inUse:
-        return 'In Use';
-      case AssetStatusFilter.store:
-        return 'Store';
-      case AssetStatusFilter.damaged:
-        return 'Damaged';
-      case AssetStatusFilter.underRepair:
-        return 'Under Repair';
-    }
-  }
-
-  String? get statusValue {
-    switch (this) {
-      case AssetStatusFilter.all:
-        return null;
-      case AssetStatusFilter.inUse:
-        return 'In Use';
-      case AssetStatusFilter.store:
-        return 'In Store';
-      case AssetStatusFilter.damaged:
-        return 'Damaged';
-      case AssetStatusFilter.underRepair:
-        return 'Under Repair';
-    }
-  }
-}
-
-List<AssetItem> get kDemoAssets => [
-  AssetItem(
-    id: '1',
-    name: 'MacBook Pro 16"',
-    assetId: 'LP-2024-001',
-    category: 'Laptop',
-    status: 'In Use',
-    brand: 'Apple',
-    model: 'MacBook Pro',
-    condition: 'Good',
-    assignedTo: 'Aisha Patel',
-  ),
-  AssetItem(
-    id: '2',
-    name: 'Logitech MX Master',
-    assetId: 'MS-2024-001',
-    category: 'Mouse',
-    status: 'In Use',
-    brand: 'Logitech',
-    model: 'MX Master 3S',
-    condition: 'Good',
-    assignedTo: 'Aisha Patel',
-  ),
-  AssetItem(
-    id: '3',
-    name: 'Dell UltraSharp 27"',
-    assetId: 'MN-2024-001',
-    category: 'Monitor',
-    status: 'In Use',
-    brand: 'Dell',
-    model: 'U2723QE',
-    condition: 'Good',
-    assignedTo: 'Aisha Patel',
-  ),
-  AssetItem(
-    id: '4',
-    name: 'Apple Magic Keyboard',
-    assetId: 'KB-2024-001',
-    category: 'Keyboard',
-    status: 'In Use',
-    brand: 'Apple',
-    model: 'Magic Keyboard',
-    condition: 'Good',
-    assignedTo: 'Aisha Patel',
-  ),
-  AssetItem(
-    id: '5',
-    name: 'HP Laptop 15',
-    assetId: 'LP-2023-012',
-    category: 'Laptop',
-    status: 'In Store',
-    brand: 'HP',
-    model: 'Pavilion 15',
-    condition: 'Good',
-    assignedTo: '—',
-  ),
-  AssetItem(
-    id: '6',
-    name: 'Sony WH-1000XM5',
-    assetId: 'HS-2024-002',
-    category: 'Headset',
-    status: 'In Use',
-    brand: 'Sony',
-    model: 'WH-1000XM5',
-    condition: 'Good',
-    assignedTo: 'Marcus Johnson',
-  ),
-];
+import 'package:provider/provider.dart';
+import 'package:share_plus/share_plus.dart';
+import 'package:cross_file/cross_file.dart';
 
 class AssetsScreenContent extends StatefulWidget {
   const AssetsScreenContent({super.key});
@@ -142,22 +26,17 @@ class AssetsScreenContent extends StatefulWidget {
 
 class _AssetsScreenContentState extends State<AssetsScreenContent> {
   final TextEditingController _searchController = TextEditingController();
-  late AssetCategory _category;
-  late AssetStatusFilter _statusFilter;
   late bool _isGridView;
-  late List<AssetItem> _allAssets = kDemoAssets;
 
-  /// Preserve view/filter state across layout changes (e.g. grid↔list, resize).
   static bool _sIsGridView = true;
-  static AssetCategory _sCategory = AssetCategory.all;
-  static AssetStatusFilter _sStatusFilter = AssetStatusFilter.all;
 
   @override
   void initState() {
     super.initState();
     _isGridView = _sIsGridView;
-    _category = _sCategory;
-    _statusFilter = _sStatusFilter;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<AssetsScreenViewModel>().fetchAssets();
+    });
   }
 
   @override
@@ -171,32 +50,14 @@ class _AssetsScreenContentState extends State<AssetsScreenContent> {
     setState(() => _isGridView = grid);
   }
 
-  void _setCategory(AssetCategory c) {
-    _sCategory = c;
-    setState(() => _category = c);
-  }
-
-  void _setStatusFilter(AssetStatusFilter s) {
-    _sStatusFilter = s;
-    setState(() => _statusFilter = s);
-  }
-
-  List<AssetItem> get _filteredAssets {
+  List<AssetItem> _filteredAssets(List<AssetItem> assets) {
     final query = _searchController.text.trim().toLowerCase();
-    return _allAssets.where((a) {
-      final matchCategory =
-          _category == AssetCategory.all ||
-          a.category.toLowerCase() == _category.label.toLowerCase();
-      final matchStatus =
-          _statusFilter.statusValue == null ||
-          a.status == _statusFilter.statusValue;
-      final matchSearch =
-          query.isEmpty ||
-          a.name.toLowerCase().contains(query) ||
+    if (query.isEmpty) return assets;
+    return assets.where((a) {
+      return a.name.toLowerCase().contains(query) ||
           a.assetId.toLowerCase().contains(query) ||
           a.brand.toLowerCase().contains(query) ||
           a.assignedTo.toLowerCase().contains(query);
-      return matchCategory && matchStatus && matchSearch;
     }).toList();
   }
 
@@ -221,129 +82,262 @@ class _AssetsScreenContentState extends State<AssetsScreenContent> {
 
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      padding: EdgeInsets.fromLTRB(
-        context.w(24),
-        0,
-        context.w(24),
-        context.h(24),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
+    return Consumer<AssetsScreenViewModel>(
+      builder: (context, vm, child) {
+        if (vm.isLoading && vm.assets.isEmpty) {
+          return Center(
+            child: Padding(
+              padding: EdgeInsets.all(context.h(48)),
+              child: const CircularProgressIndicator(),
+            ),
+          );
+        }
+        if (vm.errorMessage != null && vm.assets.isEmpty) {
+          return Center(
+            child: Padding(
+              padding: EdgeInsets.all(context.h(24)),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    vm.errorMessage!,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: AppColors.subHeadingColor,
+                      fontSize: context.text(14),
+                    ),
+                  ),
+                  SizedBox(height: context.h(16)),
+                  TextButton.icon(
+                    onPressed: vm.fetchAssets,
+                    icon: const Icon(Icons.refresh),
+                    label: const Text('Retry'),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
+        final filtered = _filteredAssets(vm.assets);
+        return SingleChildScrollView(
+          padding: EdgeInsets.fromLTRB(
+            context.w(24),
+            0,
+            context.w(24),
+            context.h(24),
+          ),
+          child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Assets',
-                      style: TextStyle(
-                        color: AppColors.headingColor,
-                        fontSize: context.text(24),
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    SizedBox(height: context.h(4)),
-                    Text(
-                      'Manage and track all organizational assets',
-                      style: TextStyle(
-                        color: AppColors.subHeadingColor,
-                        fontSize: context.text(14),
-                        fontWeight: FontWeight.w400,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              PrimaryActionButton(
-                label: 'Add Asset',
-                icon: Icons.add,
-                onTap: () async {
-                  final result = await showAddAssetDialog(context);
-                  if (result != null && mounted) {
-                    setState(() {
-                      final newId = '${_allAssets.length + 1}';
-                      _allAssets = [
-                        ..._allAssets,
-                        AssetItem(
-                          id: newId,
-                          name: result.assetName,
-                          assetId: result.assetCode,
-                          category: result.category,
-                          status: 'In Store',
-                          brand: result.brand,
-                          model: result.model,
-                          condition: result.condition,
-                          assignedTo: '—',
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Assets',
+                          style: TextStyle(
+                            color: AppColors.headingColor,
+                            fontSize: context.text(24),
+                            fontWeight: FontWeight.w700,
+                          ),
                         ),
-                      ];
-                    });
-                  }
-                },
+                        SizedBox(height: context.h(4)),
+                        Text(
+                          'Manage and track all organizational assets',
+                          style: TextStyle(
+                            color: AppColors.subHeadingColor,
+                            fontSize: context.text(14),
+                            fontWeight: FontWeight.w400,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      OutlinedButton.icon(
+                        onPressed: (vm.isImporting || vm.isExporting)
+                            ? null
+                            : () => _onImportAssets(context),
+                        icon: vm.isImporting
+                            ? SizedBox(
+                                width: 18,
+                                height: 18,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: AppColors.headingColor,
+                                ),
+                              )
+                            : Icon(Icons.upload_file, size: 18, color: AppColors.headingColor),
+                        label: Text(
+                          vm.isImporting ? 'Importing...' : 'Import',
+                          style: TextStyle(
+                            color: AppColors.headingColor,
+                            fontSize: context.text(14),
+                          ),
+                        ),
+                        style: OutlinedButton.styleFrom(
+                          side: BorderSide(color: AppColors.headingColor),
+                        ),
+                      ),
+                      SizedBox(width: context.w(12)),
+                      OutlinedButton.icon(
+                        onPressed: (vm.isImporting || vm.isExporting)
+                            ? null
+                            : () => _onExportAssets(context),
+                        icon: vm.isExporting
+                            ? SizedBox(
+                                width: 18,
+                                height: 18,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: AppColors.headingColor,
+                                ),
+                              )
+                            : Icon(Icons.download, size: 18, color: AppColors.headingColor),
+                        label: Text(
+                          vm.isExporting ? 'Exporting...' : 'Export',
+                          style: TextStyle(
+                            color: AppColors.headingColor,
+                            fontSize: context.text(14),
+                          ),
+                        ),
+                        style: OutlinedButton.styleFrom(
+                          side: BorderSide(color: AppColors.headingColor),
+                        ),
+                      ),
+                      SizedBox(width: context.w(12)),
+                      PrimaryActionButton(
+                        label: 'Add Asset',
+                        icon: Icons.add,
+                        onTap: (vm.isImporting || vm.isExporting)
+                            ? null
+                            : () async {
+                                final result = await showAddAssetDialog(context);
+                                if (result == null || !mounted) return;
+                                final vmRead = context.read<AssetsScreenViewModel>();
+                                final request = AddAssetRequest(
+                                  assetCode: result.assetCode,
+                                  name: result.assetName,
+                                  category: result.category,
+                                  brand: result.brand,
+                                  model: result.model,
+                                  version: result.version,
+                                  condition: result.condition,
+                                  currentStatus: 'Store',
+                                );
+                                final success = await vmRead.addAssetWithApi(request);
+                                if (!mounted) return;
+                                if (success) {
+                                  vmRead.clearError();
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: const Text('Asset added successfully'),
+                                      backgroundColor: AppColors.repairMarkFixedBg,
+                                      behavior: SnackBarBehavior.floating,
+                                    ),
+                                  );
+                                } else {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(
+                                        vmRead.errorMessage ?? 'Failed to add asset',
+                                      ),
+                                      backgroundColor: AppColors.redColor,
+                                      behavior: SnackBarBehavior.floating,
+                                    ),
+                                  );
+                                }
+                              },
+                      ),
+                    ],
+                  ),
+                ],
               ),
-            ],
-          ),
-          SizedBox(height: context.h(24)),
-          Row(
-            children: [
-              Expanded(
-                child: SearchInputBar(
-                  controller: _searchController,
-                  hintText: 'Search for...',
-                  onChanged: (_) => setState(() {}),
+              SizedBox(height: context.h(24)),
+              Row(
+                children: [
+                  Expanded(
+                    child: SearchInputBar(
+                      controller: _searchController,
+                      hintText: 'Search for...',
+                      onChanged: (_) => setState(() {}),
+                    ),
+                  ),
+                  SizedBox(width: context.w(12)),
+                  _ViewToggle(
+                    isGrid: _isGridView,
+                    onGridTap: () => _setView(true),
+                    onListTap: () => _setView(false),
+                  ),
+                ],
+              ),
+              SizedBox(height: context.h(16)),
+              Text(
+                'Category',
+                style: TextStyle(
+                  color: AppColors.subHeadingColor,
+                  fontSize: context.text(12),
+                  fontWeight: FontWeight.w500,
                 ),
               ),
-              SizedBox(width: context.w(12)),
-              _ViewToggle(
-                isGrid: _isGridView,
-                onGridTap: () => _setView(true),
-                onListTap: () => _setView(false),
+              SizedBox(height: context.h(6)),
+              FilterChips<AssetCategory>(
+                selected: vm.category,
+                values: AssetCategory.values,
+                labelBuilder: (c) => c.label,
+                onSelected: vm.setCategory,
               ),
+              SizedBox(height: context.h(12)),
+              Text(
+                'Status',
+                style: TextStyle(
+                  color: AppColors.subHeadingColor,
+                  fontSize: context.text(12),
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              SizedBox(height: context.h(6)),
+              FilterChips<AssetStatusFilter>(
+                selected: vm.statusFilter,
+                values: AssetStatusFilter.values,
+                labelBuilder: (s) => s.label,
+                onSelected: vm.setStatusFilter,
+              ),
+              SizedBox(height: context.h(20)),
+              if (_isGridView) _buildGrid(context, filtered) else _buildList(context, filtered),
+              if (vm.hasMore && vm.assets.isNotEmpty) ...[
+                SizedBox(height: context.h(16)),
+                Center(
+                  child: vm.isLoadingMore
+                      ? Padding(
+                          padding: context.padSym(v: 16),
+                          child: const SizedBox(
+                            height: 28,
+                            width: 28,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          ),
+                        )
+                      : TextButton.icon(
+                          onPressed: vm.loadMore,
+                          icon: const Icon(Icons.add_circle_outline, size: 20),
+                          label: const Text('Load more'),
+                        ),
+                ),
+                SizedBox(height: context.h(24)),
+              ],
             ],
           ),
-          SizedBox(height: context.h(16)),
-          Text(
-            'Category',
-            style: TextStyle(
-              color: AppColors.subHeadingColor,
-              fontSize: context.text(12),
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-          SizedBox(height: context.h(6)),
-          FilterChips<AssetCategory>(
-            selected: _category,
-            values: AssetCategory.values,
-            labelBuilder: (c) => c.label,
-            onSelected: _setCategory,
-          ),
-          SizedBox(height: context.h(12)),
-          Text(
-            'Status',
-            style: TextStyle(
-              color: AppColors.subHeadingColor,
-              fontSize: context.text(12),
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-          SizedBox(height: context.h(6)),
-          FilterChips<AssetStatusFilter>(
-            selected: _statusFilter,
-            values: AssetStatusFilter.values,
-            labelBuilder: (s) => s.label,
-            onSelected: _setStatusFilter,
-          ),
-          SizedBox(height: context.h(20)),
-          if (_isGridView) _buildGrid(context) else _buildList(context),
-        ],
-      ),
+        );
+      },
     );
   }
 
-  Widget _buildGrid(BuildContext context) {
+  Widget _buildGrid(BuildContext context, List<AssetItem> items) {
     return LayoutBuilder(
       builder: (context, constraints) {
         final crossAxisCount = constraints.maxWidth > 700
@@ -358,15 +352,17 @@ class _AssetsScreenContentState extends State<AssetsScreenContent> {
             crossAxisSpacing: 12,
             childAspectRatio: 0.72,
           ),
-          itemCount: _filteredAssets.length,
+          itemCount: items.length,
           itemBuilder: (context, index) {
-            final a = _filteredAssets[index];
+            final a = items[index];
             return AssetCard(
               key: ValueKey(a.id),
               asset: a,
               icon: _iconForCategory(a.category),
               onEdit: () => _onEditAsset(a),
               onDelete: () => _onDeleteAsset(a),
+              onReturnToStore: () => _onReturnAsset(a),
+              onReportDamage: () => _onReportDamage(a),
             );
           },
         );
@@ -374,13 +370,13 @@ class _AssetsScreenContentState extends State<AssetsScreenContent> {
     );
   }
 
-  Widget _buildList(BuildContext context) {
+  Widget _buildList(BuildContext context, List<AssetItem> items) {
     return ListView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      itemCount: _filteredAssets.length,
+      itemCount: items.length,
       itemBuilder: (context, index) {
-        final a = _filteredAssets[index];
+        final a = items[index];
         return Padding(
           key: ValueKey(a.id),
           padding: EdgeInsets.only(bottom: context.h(12)),
@@ -390,6 +386,8 @@ class _AssetsScreenContentState extends State<AssetsScreenContent> {
             isListTile: true,
             onEdit: () => _onEditAsset(a),
             onDelete: () => _onDeleteAsset(a),
+            onReturnToStore: () => _onReturnAsset(a),
+            onReportDamage: () => _onReportDamage(a),
           ),
         );
       },
@@ -399,24 +397,190 @@ class _AssetsScreenContentState extends State<AssetsScreenContent> {
   Future<void> _onEditAsset(AssetItem a) async {
     final result = await showEditAssetDialog(context, a);
     if (result == null || !mounted) return;
-    setState(() {
-      _allAssets = _allAssets.map((item) {
-        if (item.id == a.id) {
-          return AssetItem(
-            id: item.id,
-            name: result.assetName,
-            assetId: result.assetCode,
-            category: result.category,
-            status: item.status,
-            brand: result.brand,
-            model: result.model,
-            condition: result.condition,
-            assignedTo: item.assignedTo,
-          );
-        }
-        return item;
-      }).toList();
-    });
+    final vm = context.read<AssetsScreenViewModel>();
+    final request = UpdateAssetRequest(
+      name: result.assetName,
+      category: result.category,
+      brand: result.brand,
+      model: result.model,
+      version: result.version,
+      condition: result.condition,
+      currentStatus: a.status,
+    );
+    final success = await vm.updateAssetWithApi(a.id, request);
+    if (!mounted) return;
+    if (success) {
+      vm.clearError();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Asset updated'),
+          backgroundColor: AppColors.repairMarkFixedBg,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(vm.errorMessage ?? 'Failed to update asset'),
+          backgroundColor: AppColors.redColor,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  }
+
+  Future<void> _onExportAssets(BuildContext context) async {
+    final vm = context.read<AssetsScreenViewModel>();
+    final r = await vm.exportAssets();
+    if (!mounted) return;
+    if (r.success && r.csvContent != null && r.csvContent!.isNotEmpty) {
+      vm.clearError();
+      final bytes = Uint8List.fromList(utf8.encode(r.csvContent!));
+      final xFile = XFile.fromData(
+        bytes,
+        name: 'assets_export.csv',
+        mimeType: 'text/csv',
+      );
+      await Share.shareXFiles([xFile], text: 'Assets export');
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Export ready'),
+          backgroundColor: AppColors.repairMarkFixedBg,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } else if (!r.success) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(vm.errorMessage ?? 'Export failed'),
+          backgroundColor: AppColors.redColor,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  }
+
+  Future<void> _onImportAssets(BuildContext context) async {
+    final result = await FilePicker.platform.pickFiles(
+      withData: true,
+      type: FileType.custom,
+      allowedExtensions: ['csv', 'xlsx', 'xls'],
+    );
+    final file = result?.files.singleOrNull;
+    if (file == null || !mounted) return;
+    final bytes = file.bytes;
+    if (bytes == null || bytes.isEmpty) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Could not read file. Try again.'),
+          backgroundColor: AppColors.redColor,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+    final vm = context.read<AssetsScreenViewModel>();
+    final r = await vm.importAssets(
+      fileBytes: bytes,
+      filename: file.name,
+    );
+    if (!mounted) return;
+    if (r.success) {
+      vm.clearError();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(r.message ?? 'Assets imported successfully'),
+          backgroundColor: AppColors.repairMarkFixedBg,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(vm.errorMessage ?? 'Import failed'),
+          backgroundColor: AppColors.redColor,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  }
+
+  Future<void> _onReturnAsset(AssetItem a) async {
+    final vm = context.read<AssetsScreenViewModel>();
+    final success = await vm.returnAssetToStore(a.id);
+    if (!mounted) return;
+    if (success) {
+      vm.clearError();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('${a.name} returned to store'),
+          backgroundColor: AppColors.repairMarkFixedBg,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(vm.errorMessage ?? 'Failed to return asset'),
+          backgroundColor: AppColors.redColor,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  }
+
+  Future<void> _onReportDamage(AssetItem a) async {
+    final empVm = context.read<EmployeeScreenViewModel>();
+    if (empVm.employees.isEmpty) {
+      await empVm.fetchEmployees();
+      if (!mounted) return;
+    }
+    final employees = empVm.employees;
+    if (employees.isEmpty) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('No employees available. Add employees first.'),
+          backgroundColor: AppColors.redColor,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+    final result = await showReportDamageDialog(
+      context,
+      assetName: a.name,
+      employees: employees,
+    );
+    if (result == null || !mounted) return;
+    final vm = context.read<AssetsScreenViewModel>();
+    final success = await vm.reportDamage(
+      assetId: a.id,
+      employeeId: result.employeeId,
+      reason: result.reason,
+      damageDate: result.damageDate,
+    );
+    if (!mounted) return;
+    if (success) {
+      vm.clearError();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('${a.name} reported as damaged'),
+          backgroundColor: AppColors.repairMarkFixedBg,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(vm.errorMessage ?? 'Failed to report damage'),
+          backgroundColor: AppColors.redColor,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
   }
 
   Future<void> _onDeleteAsset(AssetItem a) async {
@@ -448,9 +612,27 @@ class _AssetsScreenContentState extends State<AssetsScreenContent> {
       ),
     );
     if (confirm == true && mounted) {
-      setState(
-        () => _allAssets = _allAssets.where((item) => item.id != a.id).toList(),
-      );
+      final vm = context.read<AssetsScreenViewModel>();
+      final success = await vm.deleteAssetWithApi(a.id);
+      if (!mounted) return;
+      if (success) {
+        vm.clearError();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Asset deleted'),
+            backgroundColor: AppColors.repairMarkFixedBg,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(vm.errorMessage ?? 'Failed to delete asset'),
+            backgroundColor: AppColors.redColor,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
     }
   }
 }
@@ -515,6 +697,8 @@ class AssetCard extends StatelessWidget {
   final bool isListTile;
   final VoidCallback? onEdit;
   final VoidCallback? onDelete;
+  final VoidCallback? onReturnToStore;
+  final VoidCallback? onReportDamage;
 
   const AssetCard({
     super.key,
@@ -523,7 +707,25 @@ class AssetCard extends StatelessWidget {
     this.isListTile = false,
     this.onEdit,
     this.onDelete,
+    this.onReturnToStore,
+    this.onReportDamage,
   });
+
+  /// True if asset is assigned (can be returned to store).
+  static bool _canReturnToStore(String status) {
+    final s = status.toLowerCase();
+    return s.isNotEmpty &&
+        s != 'store' &&
+        s != 'in store' &&
+        s != 'damaged' &&
+        s != 'under repair';
+  }
+
+  /// True if asset can be reported as damaged (not already damaged/under repair).
+  static bool _canReportDamage(String status) {
+    final s = status.toLowerCase();
+    return s != 'damaged' && s != 'under repair';
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -596,11 +798,41 @@ class AssetCard extends StatelessWidget {
                 _DetailLine(label: 'Condition', value: asset.condition),
                 SizedBox(height: context.h(4)),
                 _DetailLine(label: 'Assigned To', value: asset.assignedTo),
-                if (onEdit != null || onDelete != null) ...[
+                if (onEdit != null || onDelete != null || (onReturnToStore != null && _canReturnToStore(asset.status)) || (onReportDamage != null && _canReportDamage(asset.status))) ...[
                   SizedBox(height: context.h(12)),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [
+                      if (onReportDamage != null && _canReportDamage(asset.status))
+                        IconButton(
+                          onPressed: onReportDamage,
+                          icon: Icon(
+                            Icons.report_outlined,
+                            color: AppColors.headingColor,
+                            size: 20,
+                          ),
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(
+                            minWidth: 32,
+                            minHeight: 32,
+                          ),
+                          tooltip: 'Report damage',
+                        ),
+                      if (onReturnToStore != null && _canReturnToStore(asset.status))
+                        IconButton(
+                          onPressed: onReturnToStore,
+                          icon: Icon(
+                            Icons.store_outlined,
+                            color: AppColors.headingColor,
+                            size: 20,
+                          ),
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(
+                            minWidth: 32,
+                            minHeight: 32,
+                          ),
+                          tooltip: 'Return to store',
+                        ),
                       if (onEdit != null)
                         IconButton(
                           onPressed: onEdit,
@@ -669,6 +901,36 @@ class AssetCard extends StatelessWidget {
                     ),
                   ),
                   _StatusPill(status: asset.status),
+                  if (onReportDamage != null && AssetCard._canReportDamage(asset.status))
+                    IconButton(
+                      onPressed: onReportDamage,
+                      icon: Icon(
+                        Icons.report_outlined,
+                        color: AppColors.headingColor,
+                        size: 20,
+                      ),
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(
+                        minWidth: 32,
+                        minHeight: 32,
+                      ),
+                      tooltip: 'Report damage',
+                    ),
+                  if (onReturnToStore != null && AssetCard._canReturnToStore(asset.status))
+                    IconButton(
+                      onPressed: onReturnToStore,
+                      icon: Icon(
+                        Icons.store_outlined,
+                        color: AppColors.headingColor,
+                        size: 20,
+                      ),
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(
+                        minWidth: 32,
+                        minHeight: 32,
+                      ),
+                      tooltip: 'Return to store',
+                    ),
                   if (onEdit != null)
                     IconButton(
                       onPressed: onEdit,

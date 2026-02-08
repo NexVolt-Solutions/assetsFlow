@@ -1,7 +1,9 @@
 import 'package:asset_flow/Core/Constants/app_colors.dart';
 import 'package:asset_flow/Core/Constants/dashboard_constants.dart';
 import 'package:asset_flow/Core/Constants/size_extension.dart';
+import 'package:asset_flow/Core/Model/auth_token_store.dart';
 import 'package:asset_flow/Core/utils/Routes/routes_name.dart';
+import 'package:asset_flow/repository/auth_repository.dart';
 import 'package:asset_flow/view/Dashboard/screens/assign_asset_screen.dart';
 import 'package:asset_flow/view/Dashboard/screens/assets_screen.dart';
 import 'package:asset_flow/view/Dashboard/screens/employee_screen.dart';
@@ -14,6 +16,7 @@ import 'package:asset_flow/view/Dashboard/screens/profile_management_screen.dart
 import 'package:asset_flow/view/Dashboard/screens/repair_management_screen.dart';
 import 'package:asset_flow/view/Dashboard/screens/store_inventory_screen.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -28,13 +31,22 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   void _onNavTap(DashboardNavItem? item) {
     if (item == null) {
-      Navigator.pushReplacementNamed(context, RoutesName.loginScreen);
+      _logout();
       return;
     }
     setState(() => _currentNav = item);
     if (context.width < kDashboardBreakpoint) {
       Navigator.pop(context);
     }
+  }
+
+  Future<void> _logout() async {
+    final authRepo = context.read<AuthRepository>();
+    final tokenStore = context.read<AuthTokenStore>();
+    await authRepo.logout();
+    tokenStore.clearTokens();
+    if (!mounted) return;
+    Navigator.pushReplacementNamed(context, RoutesName.loginScreen);
   }
 
   Widget _buildContent() {
