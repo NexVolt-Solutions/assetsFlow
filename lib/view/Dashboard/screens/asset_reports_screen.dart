@@ -129,7 +129,7 @@ class AssetReportsScreenContent extends StatefulWidget {
 
 class _AssetReportsScreenContentState extends State<AssetReportsScreenContent> {
   ReportPeriod _period = ReportPeriod.day;
-  late List<AssetReportEntry> _entries = List.from(kDemoReportEntries);
+  late final List<AssetReportEntry> _entries = List.from(kDemoReportEntries);
 
   List<AssetReportEntry> get _filteredEntries => _entries;
 

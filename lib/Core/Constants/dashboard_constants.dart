@@ -1,4 +1,5 @@
 /// Dashboard layout and navigation constants.
+library;
 
 const double kDashboardSidebarWidth = 260;
 const double kDashboardBreakpoint = 800;

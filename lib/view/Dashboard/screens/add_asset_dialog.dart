@@ -502,7 +502,7 @@ class _AddAssetDialogState extends State<AddAssetDialog> {
         borderRadius: BorderRadius.circular(context.radius(10)),
       ),
       child: DropdownButtonFormField<String>(
-        value: value,
+        initialValue: value,
         items: items,
         onChanged: onChanged,
         dropdownColor: AppColors.cardBackground,

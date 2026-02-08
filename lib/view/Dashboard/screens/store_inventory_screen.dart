@@ -53,7 +53,7 @@ class StoreInventoryScreenContent extends StatefulWidget {
 
 class _StoreInventoryScreenContentState
     extends State<StoreInventoryScreenContent> {
-  late List<AssetItem> _storeAssets = kStoreDemoAssets;
+  late final List<AssetItem> _storeAssets = kStoreDemoAssets;
 
   static IconData _iconForCategory(String category) {
     switch (category.toLowerCase()) {

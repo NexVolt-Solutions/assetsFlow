@@ -65,7 +65,7 @@ class RepairManagementScreenContent extends StatefulWidget {
 
 class _RepairManagementScreenContentState
     extends State<RepairManagementScreenContent> {
-  late List<RepairEntry> _repairList = List.from(kDemoRepairEntries);
+  late final List<RepairEntry> _repairList = List.from(kDemoRepairEntries);
 
   int get _inRepairCount =>
       _repairList.where((e) => e.status == RepairStatus.inRepair).length;

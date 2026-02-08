@@ -19,7 +19,7 @@ class AssignAssetScreenContent extends StatefulWidget {
 class _AssignAssetScreenContentState extends State<AssignAssetScreenContent> {
   int? _selectedEmployeeIndex;
   final Set<String> _selectedAssetIds = {};
-  late List<AssetItem> _availableAssets = kDemoAssets;
+  late final List<AssetItem> _availableAssets = kDemoAssets;
 
   List<EmployeeItem> get _employees => kDemoEmployees;
 
@@ -173,12 +173,12 @@ class _AssignAssetScreenContentState extends State<AssignAssetScreenContent> {
                     ),
                   ),
                   child: DropdownButtonFormField<int>(
-                    value:
+                    initialValue:
                         _selectedEmployeeIndex != null &&
                             _selectedEmployeeIndex! >= 0 &&
                             _selectedEmployeeIndex! < _employees.length
-                            ? _selectedEmployeeIndex
-                            : null,
+                        ? _selectedEmployeeIndex
+                        : null,
                     hint: Text(
                       'Choose an employee...',
                       style: TextStyle(
@@ -247,12 +247,10 @@ class _AssignAssetScreenContentState extends State<AssignAssetScreenContent> {
                   width: double.infinity,
                   child: Material(
                     color: AppColors.assignButtonBg,
-                    borderRadius:
-                        BorderRadius.circular(context.radius(10)),
+                    borderRadius: BorderRadius.circular(context.radius(10)),
                     child: InkWell(
                       onTap: _onAssign,
-                      borderRadius:
-                          BorderRadius.circular(context.radius(10)),
+                      borderRadius: BorderRadius.circular(context.radius(10)),
                       child: Padding(
                         padding: context.padSym(v: 14),
                         child: Center(

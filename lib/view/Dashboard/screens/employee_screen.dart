@@ -186,8 +186,9 @@ class _EmployeeScreenContentState extends State<EmployeeScreenContent> {
   static String _initialsFromName(String name) {
     final parts = name.trim().split(RegExp(r'\s+'));
     if (parts.isEmpty) return '?';
-    if (parts.length == 1)
+    if (parts.length == 1) {
       return parts[0].isNotEmpty ? parts[0][0].toUpperCase() : '?';
+    }
     return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
   }
 

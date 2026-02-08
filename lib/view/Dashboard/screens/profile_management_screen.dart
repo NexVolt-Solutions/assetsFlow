@@ -17,7 +17,7 @@ class _ProfileManagementScreenContentState
   String _fullName = 'Sarah Mitchell';
   String _email = 'sarah.mitchell@acmeassets.com';
   final String _role = 'Admin';
-  bool _isActive = true;
+  final bool _isActive = true;
   final String _username = 's.mitchell';
 
   final _nameController = TextEditingController();
@@ -322,6 +322,7 @@ class _ProfileCard extends StatelessWidget {
                   style: FilledButton.styleFrom(
                     backgroundColor: AppColors.buttonColor,
                     foregroundColor: AppColors.headingColor,
+
                     padding: context.padSym(h: 20, v: 12),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(context.radius(8)),
@@ -677,8 +678,9 @@ class _ChangePasswordDialogState extends State<_ChangePasswordDialog> {
                   ),
                   validator: (v) {
                     if (v == null || v.isEmpty) return 'Enter new password';
-                    if (v.length < 6)
+                    if (v.length < 6) {
                       return 'Password must be at least 6 characters';
+                    }
                     return null;
                   },
                 ),

@@ -116,7 +116,10 @@ class _AddEmployeeDialogState extends State<AddEmployeeDialog> {
       final d = int.tryParse(parts[1]);
       final y = int.tryParse(parts[2]);
       if (m != null && d != null && y != null) {
-        if (m > 12) return DateTime.tryParse('$y-${parts[0].padLeft(2, '0')}-${parts[1].padLeft(2, '0')}');
+        if (m > 12)
+          return DateTime.tryParse(
+            '$y-${parts[0].padLeft(2, '0')}-${parts[1].padLeft(2, '0')}',
+          );
         return DateTime(y, m, d);
       }
     }
@@ -179,15 +182,17 @@ class _AddEmployeeDialogState extends State<AddEmployeeDialog> {
 
   void _onSave() {
     if (_formKey.currentState?.validate() ?? false) {
-      Navigator.of(context).pop(AddEmployeeDialogResult(
-        employeeId: _employeeIdController.text.trim(),
-        employeeCode: _employeeCodeController.text.trim(),
-        fullName: _fullNameController.text.trim(),
-        department: _department,
-        status: _status,
-        joiningDate: _joiningDate,
-        resignationDate: _resignationDate,
-      ));
+      Navigator.of(context).pop(
+        AddEmployeeDialogResult(
+          employeeId: _employeeIdController.text.trim(),
+          employeeCode: _employeeCodeController.text.trim(),
+          fullName: _fullNameController.text.trim(),
+          department: _department,
+          status: _status,
+          joiningDate: _joiningDate,
+          resignationDate: _resignationDate,
+        ),
+      );
     }
   }
 
@@ -214,13 +219,22 @@ class _AddEmployeeDialogState extends State<AddEmployeeDialog> {
               children: [
                 _buildHeader(context),
                 SizedBox(height: context.h(24)),
-                if (isWide) _buildTwoColumnFieldRow(context) else _buildSingleColumnFields(context),
+                if (isWide)
+                  _buildTwoColumnFieldRow(context)
+                else
+                  _buildSingleColumnFields(context),
                 SizedBox(height: context.h(16)),
                 _buildFullNameField(context),
                 SizedBox(height: context.h(16)),
-                if (isWide) _buildDepartmentStatusRow(context) else _buildDepartmentStatusColumn(context),
+                if (isWide)
+                  _buildDepartmentStatusRow(context)
+                else
+                  _buildDepartmentStatusColumn(context),
                 SizedBox(height: context.h(16)),
-                if (isWide) _buildDateRow(context) else _buildDateColumn(context),
+                if (isWide)
+                  _buildDateRow(context)
+                else
+                  _buildDateColumn(context),
                 SizedBox(height: context.h(28)),
                 _buildSaveButton(context),
               ],
@@ -261,19 +275,23 @@ class _AddEmployeeDialogState extends State<AddEmployeeDialog> {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Expanded(child: _buildLabeledField(
-          context,
-          label: 'Employee ID',
-          controller: _employeeIdController,
-          hint: 'EMP009',
-        )),
+        Expanded(
+          child: _buildLabeledField(
+            context,
+            label: 'Employee ID',
+            controller: _employeeIdController,
+            hint: 'EMP009',
+          ),
+        ),
         SizedBox(width: context.w(16)),
-        Expanded(child: _buildLabeledField(
-          context,
-          label: 'Employee Code',
-          controller: _employeeCodeController,
-          hint: 'EMP009',
-        )),
+        Expanded(
+          child: _buildLabeledField(
+            context,
+            label: 'Employee Code',
+            controller: _employeeCodeController,
+            hint: 'EMP009',
+          ),
+        ),
       ],
     );
   }
@@ -317,11 +335,7 @@ class _AddEmployeeDialogState extends State<AddEmployeeDialog> {
           ),
         ),
         SizedBox(height: context.h(8)),
-        _styledTextField(
-          context,
-          controller: controller,
-          hint: hint,
-        ),
+        _styledTextField(context, controller: controller, hint: hint),
       ],
     );
   }
@@ -392,7 +406,8 @@ class _AddEmployeeDialogState extends State<AddEmployeeDialog> {
           items: _departments
               .map((e) => DropdownMenuItem(value: e, child: Text(e)))
               .toList(),
-          onChanged: (v) => setState(() => _department = v ?? _departments.first),
+          onChanged: (v) =>
+              setState(() => _department = v ?? _departments.first),
         ),
       ],
     );
@@ -445,7 +460,9 @@ class _AddEmployeeDialogState extends State<AddEmployeeDialog> {
   }
 
   Widget _buildDateField(BuildContext context, {required bool isJoining}) {
-    final controller = isJoining ? _joiningDateController : _resignationDateController;
+    final controller = isJoining
+        ? _joiningDateController
+        : _resignationDateController;
     final label = isJoining ? 'Joining Date' : 'Resignation Date';
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -465,7 +482,11 @@ class _AddEmployeeDialogState extends State<AddEmployeeDialog> {
           hint: 'mm/dd/yyyy',
           readOnly: true,
           suffixIcon: IconButton(
-            icon: Icon(Icons.calendar_today, color: AppColors.subHeadingColor, size: 20),
+            icon: Icon(
+              Icons.calendar_today,
+              color: AppColors.subHeadingColor,
+              size: 20,
+            ),
             onPressed: () => _pickDate(context, isJoining: isJoining),
           ),
         ),
@@ -522,7 +543,7 @@ class _AddEmployeeDialogState extends State<AddEmployeeDialog> {
         borderRadius: BorderRadius.circular(context.radius(10)),
       ),
       child: DropdownButtonFormField<T>(
-        value: value,
+        initialValue: value,
         items: items,
         onChanged: onChanged,
         dropdownColor: AppColors.cardBackground,
