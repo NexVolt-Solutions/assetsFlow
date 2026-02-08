@@ -2,6 +2,9 @@ import 'package:asset_flow/repository/damage_repository.dart';
 import 'package:asset_flow/view/Dashboard/screens/repair_management_screen.dart';
 import 'package:flutter/foundation.dart';
 
+/// ViewModel for Repair Management screen.
+/// Repair list is currently from [kDemoRepairEntries]. When backend provides
+/// a "list repairs" or "under repair" API, replace with a fetch and use real ids for [updateRepairStatus].
 class RepairManagementScreenViewModel extends ChangeNotifier {
   RepairManagementScreenViewModel({required DamageRepository repository})
       : _repository = repository,
